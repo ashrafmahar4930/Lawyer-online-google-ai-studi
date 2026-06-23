@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'admin@jurisconnect.com' || request.auth.token.email == 'ashrafmahar4930@gmail.com');
+    }
+
+    // --- COLLECTIONS ---
+    
+    match /blood_appeals/{appealId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    match /blood_donors/{donorId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Articles - Publicly readable, Admin write
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if isAdmin() || !exists(/databases/$(database)/documents/articles/article_1);
+    }
+
+    // Lawyers - Publicly readable, Owner/Admin write
+    match /lawyers/{lawyerId} {
+      allow read: if true;
+      allow write: if (isSignedIn() && request.auth.uid == lawyerId) || isAdmin() || !exists(/databases/$(database)/documents/lawyers/lawyer_1);
+    }
+
+    // Users - Private, Owner/Admin access
+    match /users/{userId} {
+      allow read, write: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
+    }
+
+    // Cases - Protected
+    match /cases/{caseId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Ledger - Protected
+    match /ledger/{entryId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Verifications - Admin/Owner
+    match /verifications/{reqId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Reviews - Publicly readable, Authenticated users can write (create), Admin can delete
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Questions - Publicly readable, Authenticated users can create/update, Admin can delete
+    match /questions/{questionId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (request.auth.uid == resource.data.clientId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Answers - Publicly readable, Authenticated users can create/update, Admin can delete
+    match /answers/{answerId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (request.auth.uid == resource.data.lawyerId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Notifications - Authenticated read, write if signed in
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

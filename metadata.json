@@ -1,0 +1,11 @@
+{
+  "name": "lawyeronline.live",
+  "description": "A comprehensive legal services platform connecting clients with lawyers, featuring case management, financial ledgers (Ledger), and AI-powered legal document drafting.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

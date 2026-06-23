@@ -1,0 +1,237 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User role and basic info",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["client", "lawyer", "admin"] },
+        "email": { "type": "string" }
+      },
+      "required": ["role", "email"]
+    },
+    "LawyerProfile": {
+      "title": "Lawyer Profile",
+      "description": "Detailed profile for a lawyer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "title": { "type": "string" },
+        "specialty": { "type": "string" },
+        "specialties": { "type": "array", "items": { "type": "string" } },
+        "country": { "type": "string" },
+        "city": { "type": "string" },
+        "officeName": { "type": "string" },
+        "officeAddress": { "type": "string" },
+        "contactMobile": { "type": "string" },
+        "contactWhatsapp": { "type": "string" },
+        "socialMediaLink": { "type": "string" },
+        "aboutMe": { "type": "string" },
+        "achievements": { "type": "string" },
+        "isVerified": { "type": "boolean" },
+        "verificationStatus": { "type": "string", "enum": ["none", "pending", "approved", "rejected"] },
+        "rejectionReason": { "type": "string" },
+        "picture": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "licenseNumber": { "type": "string" },
+        "degreeName": { "type": "string" },
+        "issuingAuthority": { "type": "string" },
+        "enrollmentOrRollNumber": { "type": "string" },
+        "yearOfGraduation": { "type": "string" },
+        "barCouncilName": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "isBloodDonor": { "type": "boolean" }
+      }
+    },
+    "Case": {
+      "title": "Legal Case",
+      "description": "Details of a legal case",
+      "type": "object",
+      "properties": {
+        "lawyerId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "caseTitle": { "type": "string" },
+        "courtName": { "type": "string" },
+        "nextHearingDate": { "type": "string" },
+        "stage": { "type": "string" },
+        "status": { "type": "string" },
+        "description": { "type": "string" },
+        "notes": { "type": "string" },
+        "opposingCounsel": { "type": "string" }
+      }
+    },
+    "LedgerEntry": {
+      "title": "Ledger Entry",
+      "description": "Financial ledger entry for a case",
+      "type": "object",
+      "properties": {
+        "caseId": { "type": "string" },
+        "lawyerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["fee", "expense", "payment"] },
+        "description": { "type": "string" },
+        "date": { "type": "string" }
+      }
+    },
+    "Article": {
+      "title": "Legal Article",
+      "description": "Legal educational article",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "slug": { "type": "string" },
+        "featuredImage": { "type": "string" }
+      }
+    },
+    "VerificationRequest": {
+      "title": "Verification Request",
+      "description": "Request from a lawyer to be verified",
+      "type": "object",
+      "properties": {
+        "lawyerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "submittedAt": { "type": "string" }
+      }
+    },
+    "BloodAppeal": {
+      "title": "Blood Appeal",
+      "description": "Emergency blood donation request",
+      "type": "object",
+      "properties": {
+        "patientName": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "hospital": { "type": "string" },
+        "city": { "type": "string" },
+        "country": { "type": "string" },
+        "mobile": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "fulfilled"] },
+        "createdAt": { "type": "string" },
+        "requesterId": { "type": "string" }
+      }
+    },
+    "BloodDonor": {
+      "description": "Registered blood donor info",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "country": { "type": "string" },
+        "city": { "type": "string" },
+        "registeredAt": { "type": "string" },
+        "isLoggedInUser": { "type": "boolean" }
+      }
+    },
+    "Review": {
+      "description": "Lawyer review and rating",
+      "type": "object",
+      "properties": {
+        "lawyerId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewContent": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "LegalQuestion": {
+      "description": "Public legal question for SEO community Q&A",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "answersCount": { "type": "number" },
+        "views": { "type": "number" }
+      }
+    },
+    "LegalAnswer": {
+      "description": "Lawyer answer to a public question",
+      "type": "object",
+      "properties": {
+        "questionId": { "type": "string" },
+        "lawyerId": { "type": "string" },
+        "lawyerName": { "type": "string" },
+        "lawyerTitle": { "type": "string" },
+        "lawyerPicture": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "upvotes": { "type": "number" }
+      }
+    },
+    "AppNotification": {
+      "title": "App Notification",
+      "description": "System or event-driven alerts for lawyers and clients",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["question", "hearing", "payment", "article", "job", "system"] },
+        "createdAt": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "link": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User roles"
+    },
+    "lawyers/{lawyerId}": {
+      "schema": "LawyerProfile",
+      "description": "Lawyer profiles"
+    },
+    "cases/{caseId}": {
+      "schema": "Case",
+      "description": "Legal cases"
+    },
+    "ledger/{entryId}": {
+      "schema": "LedgerEntry",
+      "description": "Ledger entries"
+    },
+    "articles/{articleId}": {
+      "schema": "Article",
+      "description": "Legal articles"
+    },
+    "verifications/{requestId}": {
+      "schema": "VerificationRequest",
+      "description": "Lawyer verification requests"
+    },
+    "blood_appeals/{appealId}": {
+      "schema": "BloodAppeal",
+      "description": "Emergency blood appeals"
+    },
+    "blood_donors/{donorId}": {
+      "schema": "BloodDonor",
+      "description": "Registered blood donors"
+    },
+    "reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Lawyer page reviews"
+    },
+    "questions/{questionId}": {
+      "schema": "LegalQuestion",
+      "description": "Public community questions"
+    },
+    "answers/{answerId}": {
+      "schema": "LegalAnswer",
+      "description": "Lawyer answers to public questions"
+    },
+    "notifications/{notificationId}": {
+      "schema": "AppNotification",
+      "description": "App notification collections"
+    }
+  }
+}
