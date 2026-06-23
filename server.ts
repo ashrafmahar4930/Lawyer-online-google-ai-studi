@@ -6,17 +6,30 @@ import admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import fs from "fs";
 
-// Initialize Firebase Admin
-const firebaseConfig = JSON.parse(fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8"));
+// Initialize Firebase Admin with high robustness and fallbacks
+let firebaseConfig: any = null;
+try {
+  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  if (fs.existsSync(configPath)) {
+    firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  } else {
+    console.warn("firebase-applet-config.json not found! Falling back to env variables.");
+  }
+} catch (error) {
+  console.error("Error reading firebase-applet-config.json:", error);
+}
+
+const projectId = firebaseConfig?.projectId || process.env.FIREBASE_PROJECT_ID || "jurisconnect-wwep2";
+const firestoreDatabaseId = firebaseConfig?.firestoreDatabaseId || process.env.FIRESTORE_DATABASE_ID || "ai-studio-58027f49-f4cb-4d2f-bb1b-006e0f11be95";
 
 const appInstance = !admin.apps.length
   ? admin.initializeApp({
-      projectId: firebaseConfig.projectId,
+      projectId: projectId,
     })
   : admin.app();
 
-const db = firebaseConfig.firestoreDatabaseId 
-  ? getFirestore(appInstance, firebaseConfig.firestoreDatabaseId) 
+const db = firestoreDatabaseId 
+  ? getFirestore(appInstance, firestoreDatabaseId) 
   : getFirestore(appInstance);
 
 async function seedDatabase() {
