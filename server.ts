@@ -22,20 +22,45 @@ try {
 const projectId = firebaseConfig?.projectId || process.env.FIREBASE_PROJECT_ID || "jurisconnect-wwep2";
 const firestoreDatabaseId = firebaseConfig?.firestoreDatabaseId || process.env.FIRESTORE_DATABASE_ID || "ai-studio-58027f49-f4cb-4d2f-bb1b-006e0f11be95";
 
-const appInstance = !admin.apps.length
-  ? admin.initializeApp({
-      projectId: projectId,
-    })
-  : admin.app();
+let _db: any = null;
 
-const db = firestoreDatabaseId 
-  ? getFirestore(appInstance, firestoreDatabaseId) 
-  : getFirestore(appInstance);
+function getDb() {
+  if (!_db) {
+    try {
+      const appInstance = !admin.apps.length
+        ? admin.initializeApp({
+            projectId: projectId,
+          })
+        : admin.app();
+
+      _db = firestoreDatabaseId 
+        ? getFirestore(appInstance, firestoreDatabaseId) 
+        : getFirestore(appInstance);
+      console.log("Firebase Admin & Firestore initialized successfully with project ID:", projectId);
+    } catch (error) {
+      console.error("Error initializing Firebase/Firestore. Using safe mock fallback:", error);
+      // Fallback object to prevent crashing of the server
+      _db = {
+        collection: (name: string) => {
+          console.warn(`Firestore is not initialized. Mock collection '${name}' accessed.`);
+          return {
+            get: async () => ({ empty: true, docs: [] }),
+            doc: (id: string) => ({
+              set: async (data: any) => console.warn(`Firestore is not initialized. Mock set on '${name}/${id}' called.`),
+              get: async () => ({ exists: false, data: () => null })
+            })
+          };
+        }
+      };
+    }
+  }
+  return _db;
+}
 
 async function seedDatabase() {
   try {
     console.log("Checking database seeds...");
-    const lawyersRef = db.collection("lawyers");
+    const lawyersRef = getDb().collection("lawyers");
     const lawyersSnap = await lawyersRef.get();
     
     // Seed lawyers if collection is empty
@@ -133,7 +158,7 @@ async function seedDatabase() {
       console.log("Seeded 3 global lawyer profiles.");
     }
 
-    const articlesRef = db.collection("articles");
+    const articlesRef = getDb().collection("articles");
     const articlesSnap = await articlesRef.get();
     
     // Seed articles if empty
@@ -273,7 +298,7 @@ Category: "${category || 'General Practice'}"`;
           downvotes: 0
         };
 
-        await db.collection("questions").doc(qId).set(newQuestion);
+        await getDb().collection("questions").doc(qId).set(newQuestion);
 
         // Save AI Auto-answer
         const ansId = `answer_ai_${Date.now()}`;
@@ -290,7 +315,7 @@ Category: "${category || 'General Practice'}"`;
           downvotes: 0
         };
 
-        await db.collection("answers").doc(ansId).set(newAnswer);
+        await getDb().collection("answers").doc(ansId).set(newAnswer);
 
         // Save notification to lawyers about new question
         try {
@@ -305,7 +330,7 @@ Category: "${category || 'General Practice'}"`;
             isRead: false,
             link: "/qa"
           };
-          await db.collection("notifications").doc(notifId).set(newNotif);
+          await getDb().collection("notifications").doc(notifId).set(newNotif);
         } catch (warnNotif) {
           console.warn("Could not handle notify for question:", warnNotif);
         }
