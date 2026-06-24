@@ -200,11 +200,13 @@ async function seedDatabase() {
 
 async function startServer() {
   const app = express();
-  // Detect if we are running in production (e.g. on Firebase App Hosting / Cloud Run)
-  const isProduction = process.env.NODE_ENV === "production";
-  // Safe port binding: For AI Studio preview and development, we must bind to port 3000.
-  // For production container hosting (Cloud Run / Firebase App Hosting), we bind to process.env.PORT (standard is 8080).
-  const PORT = isProduction ? (process.env.PORT ? parseInt(process.env.PORT) : 8080) : 3000;
+  const distPath = path.join(process.cwd(), 'dist');
+  // Highly robust production detection: check NODE_ENV or if the built client files (dist/) exist.
+  // If dist/ exists, we are running in the compiled production bundle.
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(distPath);
+  // Safe port binding: Always honor the PORT environment variable if provided by Cloud Run / App Hosting.
+  // Otherwise, default to port 3000 for AI Studio preview and development.
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   app.use(express.json());
 
@@ -465,7 +467,6 @@ Category: "${category || 'General Practice'}"`;
   });
 
   // Serve built client files in production, or mount Vite middleware in development
-  const distPath = path.join(process.cwd(), 'dist');
 
   if (!isProduction) {
     const { createServer } = await import("vite");
