@@ -201,12 +201,12 @@ async function seedDatabase() {
 async function startServer() {
   const app = express();
   const distPath = path.join(process.cwd(), 'dist');
-  // Highly robust production detection: check NODE_ENV or if the built client files (dist/) exist.
-  // If dist/ exists, we are running in the compiled production bundle.
-  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(distPath);
-  // Safe port binding: Always honor the PORT environment variable if provided by Cloud Run / App Hosting.
-  // Otherwise, default to port 3000 for AI Studio preview and development.
-  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+  // Highly robust production detection: check NODE_ENV or if the executing file is located inside the compiled "dist" folder.
+  const isRunningFromDist = import.meta.url.includes("/dist/") || import.meta.url.includes("\\dist\\");
+  const isProduction = process.env.NODE_ENV === "production" || isRunningFromDist;
+  // Safe port binding: In development/AI Studio preview, we must strictly bind to port 3000.
+  // In production (Cloud Run / App Hosting), we honor process.env.PORT.
+  const PORT = isProduction && process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   app.use(express.json());
 
@@ -478,7 +478,7 @@ Category: "${category || 'General Practice'}"`;
   } else {
     app.use(express.static(distPath));
     // Correct catch-all pattern compatible with Express 5 / path-to-regexp 8.x
-    app.get('(.*)', (req, res) => {
+    app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
