@@ -8,7 +8,7 @@ import fs from "fs";
 
 // High robust environment/production detection
 const isRunningFromDist = import.meta.url.includes("/dist/") || import.meta.url.includes("\\dist\\");
-const isProduction = process.env.NODE_ENV === "production" || isRunningFromDist;
+let isProduction = process.env.NODE_ENV === "production" || isRunningFromDist || !import.meta.url.endsWith(".ts");
 
 // Initialize Firebase Admin with high robustness and fallbacks
 let firebaseConfig: any = null;
@@ -214,7 +214,7 @@ async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');
   // Safe port binding: In development/AI Studio preview, we must strictly bind to port 3000.
   // In production (Cloud Run / App Hosting), we honor process.env.PORT.
-  const PORT = isProduction && process.env.PORT ? parseInt(process.env.PORT) : 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   app.use(express.json());
 
@@ -475,20 +475,30 @@ Category: "${category || 'General Practice'}"`;
   });
 
   // Serve built client files in production, or mount Vite middleware in development
-
+  let viteLoaded = false;
   if (!isProduction) {
-    const { createServer } = await import("vite");
-    const vite = await createServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
+    try {
+      const { createServer } = await import("vite");
+      const vite = await createServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      viteLoaded = true;
+      console.log("Vite dev server middleware mounted successfully.");
+    } catch (viteError) {
+      console.warn("Could not load Vite dev server middleware (falling back to production mode):", viteError);
+      isProduction = true;
+    }
+  }
+
+  if (isProduction || !viteLoaded) {
     app.use(express.static(distPath));
     // Correct catch-all pattern compatible with Express 5 / path-to-regexp 8.x
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
+    console.log("Serving static production assets from:", distPath);
   }
 
   app.listen(PORT, "0.0.0.0", () => {
