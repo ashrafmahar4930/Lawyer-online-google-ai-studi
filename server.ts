@@ -6,6 +6,10 @@ import admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import fs from "fs";
 
+// High robust environment/production detection
+const isRunningFromDist = import.meta.url.includes("/dist/") || import.meta.url.includes("\\dist\\");
+const isProduction = process.env.NODE_ENV === "production" || isRunningFromDist;
+
 // Initialize Firebase Admin with high robustness and fallbacks
 let firebaseConfig: any = null;
 try {
@@ -19,8 +23,13 @@ try {
   console.error("Error reading firebase-applet-config.json:", error);
 }
 
-const projectId = firebaseConfig?.projectId || process.env.FIREBASE_PROJECT_ID || "jurisconnect-wwep2";
-const firestoreDatabaseId = firebaseConfig?.firestoreDatabaseId || process.env.FIRESTORE_DATABASE_ID || "ai-studio-58027f49-f4cb-4d2f-bb1b-006e0f11be95";
+const projectId = isProduction 
+  ? (process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT) 
+  : (process.env.FIREBASE_PROJECT_ID || firebaseConfig?.projectId || "jurisconnect-wwep2");
+
+const firestoreDatabaseId = isProduction
+  ? process.env.FIRESTORE_DATABASE_ID 
+  : (process.env.FIRESTORE_DATABASE_ID || firebaseConfig?.firestoreDatabaseId || "ai-studio-58027f49-f4cb-4d2f-bb1b-006e0f11be95");
 
 let _db: any = null;
 
@@ -28,15 +37,17 @@ function getDb() {
   if (!_db) {
     try {
       const appInstance = !admin.apps.length
-        ? admin.initializeApp({
-            projectId: projectId,
-          })
+        ? (isProduction 
+            ? admin.initializeApp() 
+            : admin.initializeApp({ projectId: projectId }))
         : admin.app();
 
-      _db = firestoreDatabaseId 
-        ? getFirestore(appInstance, firestoreDatabaseId) 
-        : getFirestore(appInstance);
-      console.log("Firebase Admin & Firestore initialized successfully with project ID:", projectId);
+      if (firestoreDatabaseId && firestoreDatabaseId !== "(default)") {
+        _db = getFirestore(appInstance, firestoreDatabaseId);
+      } else {
+        _db = getFirestore(appInstance);
+      }
+      console.log("Firebase Admin & Firestore initialized successfully with project ID:", projectId || "Default ADC Project", "database:", firestoreDatabaseId || "(default)");
     } catch (error) {
       console.error("Error initializing Firebase/Firestore. Using safe mock fallback:", error);
       // Fallback object to prevent crashing of the server
@@ -201,9 +212,6 @@ async function seedDatabase() {
 async function startServer() {
   const app = express();
   const distPath = path.join(process.cwd(), 'dist');
-  // Highly robust production detection: check NODE_ENV or if the executing file is located inside the compiled "dist" folder.
-  const isRunningFromDist = import.meta.url.includes("/dist/") || import.meta.url.includes("\\dist\\");
-  const isProduction = process.env.NODE_ENV === "production" || isRunningFromDist;
   // Safe port binding: In development/AI Studio preview, we must strictly bind to port 3000.
   // In production (Cloud Run / App Hosting), we honor process.env.PORT.
   const PORT = isProduction && process.env.PORT ? parseInt(process.env.PORT) : 3000;
