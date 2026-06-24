@@ -460,8 +460,11 @@ Category: "${category || 'General Practice'}"`;
     }
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  // Check if we are running in production by looking for the built client files
+  const distPath = path.join(process.cwd(), 'dist');
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(distPath);
+
+  if (!isProduction) {
     const { createServer } = await import("vite");
     const vite = await createServer({
       server: { middlewareMode: true },
@@ -469,9 +472,8 @@ Category: "${category || 'General Practice'}"`;
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('/:all*', (req, res) => {
+    app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
