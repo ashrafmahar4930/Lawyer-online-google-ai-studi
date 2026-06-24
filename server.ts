@@ -204,15 +204,22 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Gemini Setup
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY || "",
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
+  // Gemini Setup (lazy initialized to prevent startup crashes if key is missing)
+  let _ai: any = null;
+  function getAi() {
+    if (!_ai) {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      _ai = new GoogleGenAI({
+        apiKey: apiKey || "MOCK_KEY_FOR_STARTUP",
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
     }
-  });
+    return _ai;
+  }
 
   // API routes
   app.post("/api/qa/moderate-and-reply", async (req, res) => {
@@ -250,7 +257,7 @@ Title: "${title}"
 Description: "${description}"
 Category: "${category || 'General Practice'}"`;
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model: "gemini-3.5-flash",
         contents: prompt,
         config: {
@@ -358,7 +365,7 @@ Category: "${category || 'General Practice'}"`;
   app.post("/api/gemini/generate-article", async (req, res) => {
     const { topic } = req.body;
     try {
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model: "gemini-3.5-flash",
         contents: `Write a professional legal article about: ${topic}. Format it with Markdown headers and paragraphs. Keep it under 500 words.`,
       });
@@ -372,7 +379,7 @@ Category: "${category || 'General Practice'}"`;
   app.post("/api/gemini/generate-document", async (req, res) => {
     const { docType, details } = req.body;
     try {
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model: "gemini-3.5-flash",
         contents: `Draft a legal document of type: "${docType}". 
         Here are the specific details: "${details}".
@@ -407,7 +414,7 @@ Category: "${category || 'General Practice'}"`;
       4. Avoid generic fluff or cliches; make it read authentic, highly polished, and convincing.
       5. Keep it to approximately 100 to 150 words. Write a single cohesive, high-impact paragraph. Do not include placeholders, template brackets, formatting headers, or markdown wrappers.`;
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model: "gemini-3.5-flash",
         contents: prompt,
       });
@@ -441,7 +448,7 @@ Category: "${category || 'General Practice'}"`;
         "${text}"`;
       }
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model: "gemini-3.5-flash",
         contents: prompt,
       });
