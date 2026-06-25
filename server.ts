@@ -494,7 +494,7 @@ Category: "${category || 'General Practice'}"`;
   if (isProduction || !viteLoaded) {
     app.use(express.static(distPath));
     // Correct catch-all pattern compatible with Express 5 / path-to-regexp 8.x
-    app.get('*', (req, res) => {
+    app.get('*all', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
     console.log("Serving static production assets from:", distPath);
