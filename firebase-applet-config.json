@@ -1,10 +1,10 @@
 {
   "projectId": "jurisconnect-wwep2",
-  "appId": "1:525233484348:web:05aebe565209725cd00939",
+  "appId": "1:525233484348:web:1049b0ad988d207ad00939",
   "apiKey": "AIzaSyACnYhtg8x3lAQfYtZyYK-vqvZMw0zZi_U",
   "authDomain": "jurisconnect-wwep2.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-58027f49-f4cb-4d2f-bb1b-006e0f11be95",
+  "firestoreDatabaseId": "(default)",
   "storageBucket": "jurisconnect-wwep2.firebasestorage.app",
   "messagingSenderId": "525233484348",
-  "measurementId": ""
+  "measurementId": "G-2TYR490D5S"
 }

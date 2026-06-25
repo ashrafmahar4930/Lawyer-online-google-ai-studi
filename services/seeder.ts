@@ -4,7 +4,7 @@ import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
 
 const ARTICLES = [
   {
-    id: 'art_1',
+    id: 'article_1',
     title: 'Understanding Child Custody Laws',
     description: 'A comprehensive guide to the Guardian and Wards Act and its application in modern family courts.',
     content: 'Child custody laws are primarily governed by international principles emphasizing the "welfare of the minor". The courts usually lean towards the primary caregiver for younger children, but this can be challenged if the welfare of the child is at stake...',
@@ -18,17 +18,18 @@ const ARTICLES = [
 const LAWYERS = [
   {
     uid: 'lawyer_1',
+    fullName: 'Advocate Ahmed Khan',
     name: 'Advocate Ahmed Khan',
     title: 'Senior Counsel',
     specialties: ['Criminal Law', 'Civil Litigation'],
     country: 'United Kingdom',
-    city: 'Islamabad',
+    city: 'London',
     officeName: 'Khan & Associates',
-    officeAddress: 'Office 402, Blue Area, Islamabad',
-    phone: '+92 300 1234567',
-    whatsapp: '+92 300 1234567',
-    email: 'ahmed@example.com',
-    about: 'Over 20 years of experience in the High Court.',
+    officeAddress: 'Office 402, High Holborn, London',
+    contactMobile: '+44 20 7123 4567',
+    contactWhatsapp: '+44 20 7123 4567',
+    contactEmail: 'ahmed@lawyeronline.live',
+    aboutMe: 'Over 20 years of experience in the High Court.',
     isVerified: true,
     verificationStatus: 'approved',
     rating: 4.8,

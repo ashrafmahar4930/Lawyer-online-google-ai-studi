@@ -5,12 +5,15 @@ import { LawyerProfile } from '../types';
 import * as db from '../services/mockDataService';
 import { useNavigate, Link } from 'react-router-dom';
 import { compressImage } from '../utils/imageUtils';
+import { Plus, Briefcase, FileText, Wallet } from 'lucide-react';
 
 export default function LawyerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<LawyerProfile | undefined>(undefined);
   const [uploading, setUploading] = useState(false);
+  const [showFab, setShowFab] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -29,6 +32,9 @@ export default function LawyerDashboard() {
           try {
               setUploading(true);
               const originalFile = e.target.files[0];
+              
+              setPreviewUrl(URL.createObjectURL(originalFile));
+
               const compressedFile = await compressImage(originalFile, 800, 800, 0.7);
               const path = `profile-pictures/${user.uid}/${Date.now()}_${compressedFile.name}`;
               const oldPictureUrl = profile?.picture;
@@ -77,7 +83,7 @@ export default function LawyerDashboard() {
             <div className="relative group cursor-pointer w-28 h-28 mb-4">
                 <div className="w-28 h-28 rounded-full bg-slate-200 overflow-hidden border-2 border-slate-100 shadow">
                     <img 
-                         src={profile?.picture || `https://picsum.photos/seed/${user.uid}/200`} 
+                         src={previewUrl || profile?.picture || `https://picsum.photos/seed/${user.uid}/200`} 
                          alt="Profile" 
                          className="w-full h-full object-cover"
                     />
@@ -118,6 +124,7 @@ export default function LawyerDashboard() {
                 </Link>
             ))}
         </div>
+
     </div>
   );
 }

@@ -42,6 +42,7 @@ import LawyerAITools from './pages/lawyer-dashboard/AITools';
 import { PrivacyPolicy, TermsOfService, Disclaimer, HowWeWork, ContactUs, SubmitComplaint } from './pages/LegalPages';
 import Navbar from './components/Navbar';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import AIChatBox from './components/AIChatBox';
 
 // Auth Context
 interface AuthContextType {
@@ -201,7 +202,7 @@ export default function App() {
         let role = await getUserRole(firebaseUser.uid, true);
         
         // Admin check: using the requested admin email
-        if (firebaseUser.email === 'admin@jurisconnect.com' || firebaseUser.email === 'ashrafmahar4930@gmail.com') {
+        if (firebaseUser.email?.toLowerCase() === 'admin@jurisconnect.com') {
           role = 'admin';
           // Seed data if admin logs in and data is missing
           seedDataIfEmpty();
@@ -234,7 +235,7 @@ export default function App() {
       const firebaseUser = auth.currentUser;
       let role = await getUserRole(firebaseUser.uid, true);
       
-      if (firebaseUser.email === 'admin@jurisconnect.com' || firebaseUser.email === 'ashrafmahar4930@gmail.com') {
+      if (firebaseUser.email?.toLowerCase() === 'admin@jurisconnect.com') {
         role = 'admin';
       }
 
@@ -256,6 +257,7 @@ export default function App() {
           <ScrollToTop />
           <div className="min-h-screen bg-blue-50 text-slate-900 flex flex-col font-sans">
             <PwaInstallPrompt />
+            <AIChatBox />
             <Navbar />
             <main className="flex-grow">
               <Routes>

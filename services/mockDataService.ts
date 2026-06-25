@@ -239,254 +239,6 @@ const mapToDbCase = (c: Case) => {
 };
 
 
-// --- Fallback Static Data Seed (In case real cloud Firestore is empty on cold starts) ---
-
-export const fallbackLawyers: LawyerProfile[] = [
-  {
-    uid: 'lawyer_1',
-    fullName: 'Advocate Ahmed Khan',
-    firstName: 'Ahmed',
-    lastName: 'Khan',
-    username: 'ahmed_khan',
-    title: 'Senior Counsel',
-    specialty: 'Criminal Law',
-    specialties: ['Criminal Law', 'Civil Litigation'],
-    services: ['Bail matters', 'Criminal Defence', 'Appellate Court appeals'],
-    experience: '18 Years',
-    country: 'United Kingdom',
-    city: 'London',
-    officeName: 'Khan & Associates',
-    officeAddress: 'Office 402, High Holborn, London',
-    contactMobile: '+44 20 7123 4567',
-    contactWhatsapp: '+44 20 7123 4567',
-    contactEmail: 'ahmed@lawyeronline.live',
-    socialMediaLink: '',
-    facebookUrl: '',
-    linkedinUrl: '',
-    twitterUrl: '',
-    degreeName: 'LL.B (Hons)',
-    education: ['LL.B (Hons) - King\'s College London', 'LL.M - University of London'],
-    issuingAuthority: 'Bar Council of England and Wales',
-    licenseNumber: 'BCEW-123456',
-    aboutMe: 'Specializing in white-collar crimes, corporate defence, and appellate civil appeals with 18 years of experience.',
-    achievements: 'Successfully defended 500+ criminal trials in higher courts.',
-    isVerified: true,
-    isSuspended: false,
-    verificationStatus: 'approved',
-    picture: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256',
-    rating: 4.8,
-    reviewCount: 24,
-    enrollmentOrRollNumber: 'BCEW-100244',
-    yearOfGraduation: '2008',
-    barCouncilName: 'Bar Council of England and Wales',
-    isBloodDonor: false,
-    bloodGroup: ''
-  },
-  {
-    uid: 'lawyer_2',
-    fullName: 'Advocate Ayesha Malik',
-    firstName: 'Ayesha',
-    lastName: 'Malik',
-    username: 'ayesha_malik',
-    title: 'Senior Partner',
-    specialty: 'Family Law',
-    specialties: ['Family Law', 'Civil Litigation'],
-    services: ['Divorce', 'Child Custody', 'Guardianship'],
-    experience: '15 Years',
-    country: 'United States',
-    city: 'New York',
-    officeName: 'Malik Legal Chambers',
-    officeAddress: '72-B, Madison Avenue, New York',
-    contactMobile: '+1 212 555 1234',
-    contactWhatsapp: '+1 212 555 1234',
-    contactEmail: 'ayesha@lawyeronline.live',
-    socialMediaLink: '',
-    facebookUrl: '',
-    linkedinUrl: '',
-    twitterUrl: '',
-    degreeName: 'LL.B',
-    education: ['JD - Harvard Law School'],
-    issuingAuthority: 'New York State Bar Association',
-    licenseNumber: 'NYSBA-654321',
-    aboutMe: 'Highly focused on child custody, divorce proceedings, guardianship litigations, and human rights advocacy.',
-    achievements: 'Recognized as leading family law expert by New York State Bar Association; published author in major defense legal reviews.',
-    isVerified: true,
-    isSuspended: false,
-    verificationStatus: 'approved',
-    picture: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256',
-    rating: 4.9,
-    reviewCount: 42,
-    enrollmentOrRollNumber: 'NYSBA-201554',
-    yearOfGraduation: '2011',
-    barCouncilName: 'New York State Bar Association',
-    isBloodDonor: false,
-    bloodGroup: ''
-  },
-  {
-    uid: 'lawyer_3',
-    fullName: 'Barrister Bilal Shah',
-    firstName: 'Bilal',
-    lastName: 'Shah',
-    username: 'bilal_shah',
-    title: 'Managing Director',
-    specialty: 'Corporate Law',
-    specialties: ['Corporate Law', 'Real Estate'],
-    services: ['Company registration', 'IP Litigation', 'Property transfer'],
-    experience: '12 Years',
-    country: 'Canada',
-    city: 'Toronto',
-    officeName: 'Shah & Co. Legal Advisors',
-    officeAddress: 'Level 12, Executive Tower, Toronto',
-    contactMobile: '+1 416 555 9876',
-    contactWhatsapp: '+1 416 555 9876',
-    contactEmail: 'bilal@lawyeronline.live',
-    socialMediaLink: '',
-    facebookUrl: '',
-    linkedinUrl: '',
-    twitterUrl: '',
-    degreeName: 'LL.B (Hons)',
-    education: ['University of Toronto Faculty of Law'],
-    issuingAuthority: 'Law Society of Ontario',
-    licenseNumber: 'LSO-98765',
-    aboutMe: 'Providing top-tier corporate structuring advisory, intellectual property litigation, and complex property transaction services.',
-    achievements: 'Advisory counsel for various commercial tech unicorns and property mega-projects in Toronto.',
-    isVerified: true,
-    isSuspended: false,
-    verificationStatus: 'approved',
-    picture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256',
-    rating: 4.7,
-    reviewCount: 19,
-    enrollmentOrRollNumber: 'LSO-98765',
-    yearOfGraduation: '2014',
-    barCouncilName: 'Law Society of Ontario',
-    isBloodDonor: false,
-    bloodGroup: ''
-  },
-  {
-    uid: 'lawyer_4',
-    fullName: 'Advocate Fatima Lodhi',
-    firstName: 'Fatima',
-    lastName: 'Lodhi',
-    username: 'fatima_lodhi',
-    title: 'Principal Advocate',
-    specialty: 'Tax Law',
-    specialties: ['Tax Law', 'Civil Litigation'],
-    services: ['Tax filing', 'Tax Audits representation', 'Custom appeals'],
-    experience: '12 Years',
-    country: 'Australia',
-    city: 'Sydney',
-    officeName: 'Lodhi & Lodhi Associates',
-    officeAddress: 'Office 3, Mall Plaza, Sydney',
-    contactMobile: '+61 2 5550 1234',
-    contactWhatsapp: '+61 2 5550 1234',
-    contactEmail: 'fatima@lawyeronline.live',
-    socialMediaLink: '',
-    facebookUrl: '',
-    linkedinUrl: '',
-    twitterUrl: '',
-    degreeName: 'LL.B',
-    education: ['University of Sydney'],
-    issuingAuthority: 'New South Wales Bar Association',
-    licenseNumber: 'NSW-77665',
-    aboutMe: 'Over 12 years representing high-net-worth clients, SMEs, and corporate entities in custom appeals and tax audit disputes.',
-    achievements: 'Former legal consultant for state regulatory authorities. High filing rate with tax relief tribunal approvals.',
-    isVerified: true,
-    isSuspended: false,
-    verificationStatus: 'approved',
-    picture: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256',
-    rating: 4.9,
-    reviewCount: 31,
-    enrollmentOrRollNumber: 'NSW-77665',
-    yearOfGraduation: '2014',
-    barCouncilName: 'New South Wales Bar Association',
-    isBloodDonor: false,
-    bloodGroup: ''
-  },
-  {
-    uid: 'lawyer_5',
-    fullName: 'Advocate Zainab Jatoi',
-    firstName: 'Zainab',
-    lastName: 'Jatoi',
-    username: 'zainab_jatoi',
-    title: 'Immigration Counsel',
-    specialty: 'Immigration',
-    specialties: ['Immigration', 'Family Law'],
-    services: ['Visa appeals', 'Overseas immigration claims', 'US/UK Immigration rules'],
-    experience: '9 Years',
-    country: 'United Kingdom',
-    city: 'London',
-    officeName: 'Jatoi Law Chambers',
-    officeAddress: '15 High Street, London',
-    contactMobile: '+44 20 7946 0958',
-    contactWhatsapp: '+44 20 7946 0958',
-    contactEmail: 'zainab@lawyeronline.live',
-    socialMediaLink: '',
-    facebookUrl: '',
-    linkedinUrl: '',
-    twitterUrl: '',
-    degreeName: 'LL.B',
-    education: ['LL.B - International University'],
-    issuingAuthority: 'London Bar Council',
-    licenseNumber: 'LBC-55443',
-    aboutMe: 'Specialist in visa appeals, overseas citizenship matters, and international child custody, with an emphasis on UK/US immigration rules.',
-    achievements: 'Successfully processed over 800 overseas resident status appeals and settlement cases.',
-    isVerified: true,
-    isSuspended: false,
-    verificationStatus: 'approved',
-    picture: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=256',
-    rating: 4.6,
-    reviewCount: 15,
-    enrollmentOrRollNumber: 'PBC-55443',
-    yearOfGraduation: '2017',
-    barCouncilName: 'Punjab Bar Council',
-    isBloodDonor: false,
-    bloodGroup: ''
-  }
-];
-
-export const fallbackArticles: Article[] = [
-  {
-    id: 'article_1',
-    title: 'Understanding Child Custody Laws Internationally',
-    description: 'A comprehensive guide to child custody acts and application in modern family courts globally.',
-    content: 'Child custody laws generally prioritize the "welfare of the minor" across the globe. The courts usually assess the primary caregiver, environment, and moral guidance. The primary caregiver may lose custody rights under certain circumstances, e.g., if they do not provide proper moral guidance or safety.',
-    author: 'Advocate Ayesha Malik',
-    slug: 'understanding-child-custody-global',
-    featuredImage: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800',
-    date: 'Recently'
-  },
-  {
-    id: 'article_2',
-    title: 'Registration of Marriages & Divorce Procedural Guide',
-    description: 'Understanding the legal requirements for marriage registration, the arbitration process, and official certificates.',
-    content: 'Most jurisdictions mandate registration of all marriages in respective courts. Failure to register can lead to complications during inheritance or visa applications. Issuance of marriage certificates relies on verified details. In case of dissolution, the legal process of divorce requires notification procedures handled in local councils to finalize and receive an official Divorce Certificate.',
-    author: 'Advocate Zainab Jatoi',
-    slug: 'marriage-divorce-registration-global',
-    featuredImage: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800',
-    date: 'Recently'
-  },
-  {
-    id: 'article_3',
-    title: 'Company Registration & Compliance Handbook',
-    description: 'A step-by-step roadmap for registering a Private Limited Company, obtaining tax IDs, and complying with local tax laws.',
-    content: 'Setting up a business entity requires following the state and federal regulations. First, secure name approval online through government eServices portals. Submit memorandum and articles of association along with digital copies of National IDs. Once registered, apply for National Tax Number through tax portals and establish a commercial bank account for regulatory audits.',
-    author: 'Barrister Bilal Shah',
-    slug: 'how-to-start-business-global',
-    featuredImage: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800',
-    date: 'Recently'
-  },
-  {
-    id: 'article_4',
-    title: 'Income Tax Filing Guide: Active Taxpayer Benefits',
-    description: 'A critical guide for active tax filers, detailing timelines, penalties, and online portal procedures.',
-    content: 'Filing income tax returns through official online government websites is crucial for registering on the Active Taxpayer List. Active filers enjoy massive withholding tax reductions on banking activities, land acquisition, registering luxury cars, and commercial contracts. Ensure your tax return, asset updates, and wealth statement declarations are finalized before the yearly deadline to avoid statutory cash penalties.',
-    author: 'Advocate Fatima Lodhi',
-    slug: 'important-tax-filing-rules',
-    featuredImage: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800',
-    date: 'Recently'
-  }
-];
-
 // --- User & Profile (Lawyers Collection) ---
 
 export const getLawyerProfile = async (uid: string): Promise<LawyerProfile | undefined> => {
@@ -497,11 +249,10 @@ export const getLawyerProfile = async (uid: string): Promise<LawyerProfile | und
     if (docSnap.exists()) {
       return mapToAppProfile(docSnap.data(), uid);
     }
-    // Fallback to static seed
-    return fallbackLawyers.find(l => l.uid === uid);
+    return undefined;
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, path, false);
-    return fallbackLawyers.find(l => l.uid === uid);
+    return undefined;
   }
 };
 
@@ -557,19 +308,20 @@ export const getAllLawyers = async (): Promise<LawyerProfile[]> => {
   const path = 'lawyers';
   try {
     const querySnapshot = await getDocs(collection(db, path));
+    console.log(`Fetched ${querySnapshot.size} lawyers from Firestore collection "${path}" in database "${(db as any)._databaseId?.database || 'default'}"`);
     const profiles: LawyerProfile[] = [];
     querySnapshot.forEach((doc) => {
       profiles.push(mapToAppProfile(doc.data(), doc.id));
     });
     // Fallback if collection is empty
     if (profiles.length === 0) {
-      console.log("[Firebase client fallback] Loading local static lawyer profiles.");
-      return fallbackLawyers;
+      console.log("Lawyers collection is empty in Firestore.");
+      return [];
     }
     return profiles;
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, path, false);
-    return fallbackLawyers;
+    return [];
   }
 };
 
@@ -1034,18 +786,19 @@ export const getArticles = async (): Promise<Article[]> => {
     const path = 'articles';
     try {
         const querySnapshot = await getDocs(collection(db, path));
+        console.log(`Fetched ${querySnapshot.size} articles from Firestore collection "${path}"`);
         const articles: Article[] = [];
         querySnapshot.forEach((doc) => {
             articles.push(mapToAppArticle(doc.data(), doc.id));
         });
         if (articles.length === 0) {
-            console.log("[Firebase client fallback] Loading local static articles.");
-            return fallbackArticles;
+            console.log("Articles collection is empty in Firestore.");
+            return [];
         }
         return articles;
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, path, false);
-    return fallbackArticles;
+    return [];
   }
 }
 
@@ -1059,13 +812,10 @@ export const getArticleBySlug = async (slug: string): Promise<Article | null> =>
             const doc = querySnapshot.docs[0];
             return mapToAppArticle(doc.data(), doc.id);
         }
-        // Fallback to static seed
-        const fallback = fallbackArticles.find(a => a.slug === slug);
-        return fallback || null;
+        return null;
     } catch (error) {
         console.warn("Error getting article by slug:", error);
-        const fallback = fallbackArticles.find(a => a.slug === slug);
-        return fallback || null;
+        return null;
     }
 }
 
@@ -1182,8 +932,19 @@ export const registerBloodDonor = async (donor: Omit<BloodDonor, 'id' | 'registe
     }
     return donorId;
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'blood_donors');
-    throw error;
+    handleFirestoreError(error, OperationType.WRITE, 'blood_donors', false);
+    const donorId = auth.currentUser?.uid || `anon_${Date.now()}`;
+    const newDonor: BloodDonor = {
+      ...donor,
+      id: donorId,
+      registeredAt: new Date().toISOString(),
+      isLoggedInUser: !!auth.currentUser
+    };
+    const saved = localStorage.getItem('localBloodDonors');
+    const existing = saved ? JSON.parse(saved) : [];
+    existing.push(newDonor);
+    localStorage.setItem('localBloodDonors', JSON.stringify(existing));
+    return donorId;
   }
 };
 
@@ -1200,8 +961,19 @@ export const submitBloodAppeal = async (appeal: Omit<BloodAppeal, 'id' | 'status
     await setDoc(appealRef, newAppeal);
     return appealRef.id;
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'blood_appeals');
-    throw error;
+    handleFirestoreError(error, OperationType.WRITE, 'blood_appeals', false);
+    const newAppeal: BloodAppeal = {
+      ...appeal,
+      id: `local_appeal_${Date.now()}`,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      requesterId: auth.currentUser?.uid || 'anonymous'
+    };
+    const saved = localStorage.getItem('localBloodAppeals');
+    const existing = saved ? JSON.parse(saved) : [];
+    existing.push(newAppeal);
+    localStorage.setItem('localBloodAppeals', JSON.stringify(existing));
+    return newAppeal.id;
   }
 };
 
@@ -1227,7 +999,7 @@ export const getActiveBloodAppeals = async (): Promise<BloodAppeal[]> => {
       if (isExpired) {
         // Automatically delete the expired appeal from Firestore to recycle database storage
         try {
-          deleteDoc(doc(db, 'blood_appeals', document.id));
+          await deleteDoc(doc(db, 'blood_appeals', document.id));
           console.log(`[getActiveBloodAppeals] Auto-deleted expired blood appeal: ${document.id}`);
         } catch (e) {
           console.error("Failed to delete expired blood appeal:", document.id, e);
@@ -1241,7 +1013,8 @@ export const getActiveBloodAppeals = async (): Promise<BloodAppeal[]> => {
   } catch (error: any) {
     // Follow skill instructions for error handling
     handleFirestoreError(error, OperationType.LIST, path, false);
-    return [];
+    const saved = localStorage.getItem('localBloodAppeals');
+    return saved ? JSON.parse(saved) : [];
   }
 };
 
@@ -1249,8 +1022,13 @@ export const deleteBloodAppeal = async (appealId: string) => {
   try {
     await deleteDoc(doc(db, 'blood_appeals', appealId));
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'blood_appeals');
-    throw error;
+    handleFirestoreError(error, OperationType.WRITE, 'blood_appeals', false);
+    const saved = localStorage.getItem('localBloodAppeals');
+    if (saved) {
+      const existing: BloodAppeal[] = JSON.parse(saved);
+      const filtered = existing.filter(a => a.id !== appealId);
+      localStorage.setItem('localBloodAppeals', JSON.stringify(filtered));
+    }
   }
 };
 
@@ -1273,7 +1051,15 @@ export const getMatchingDonors = async (bloodGroup: string, country: string, cit
   } catch (error) {
     console.error("Error matching donors:", error);
     // In dev, if index is missing, firestore will give a link. We catch and return empty.
-    return [];
+    const saved = localStorage.getItem('localBloodDonors');
+    const allLocal: BloodDonor[] = saved ? JSON.parse(saved) : [];
+    return allLocal.filter(data => {
+      let isMatch = data.bloodGroup === bloodGroup && data.country === country;
+      if (city) {
+        isMatch = isMatch && data.city === city;
+      }
+      return isMatch;
+    });
   }
 };
 
@@ -1293,74 +1079,25 @@ export const getBloodDonorProfile = async (uid: string): Promise<BloodDonor | un
 };
 
 // --- Mock Data Helpers for Dropdowns ---
+import { Country as CSC_Country, City as CSC_City } from 'country-state-city';
 
 export const getCountries = async (): Promise<Country[]> => {
-    // In a real app, this would be an API call or DB fetch
-    return [
-        { name: "Afghanistan", code: "AF", cities: ["Kabul", "Kandahar", "Herat", "Mazar-i-Sharif"] },
-        { name: "Albania", code: "AL", cities: ["Tirana", "Durrës", "Vlorë", "Shkodër"] },
-        { name: "Algeria", code: "DZ", cities: ["Algiers", "Oran", "Constantine", "Annaba"] },
-        { name: "Argentina", code: "AR", cities: ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "Tucumán"] },
-        { name: "Australia", code: "AU", cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Canberra", "Hobart", "Gold Coast", "Darwin", "Newcastle"] },
-        { name: "Austria", code: "AT", cities: ["Vienna", "Graz", "Linz", "Salzburg", "Innsbruck"] },
-        { name: "Bahrain", code: "BH", cities: ["Manama", "Riffa", "Muharraq", "Hamad Town"] },
-        { name: "Bangladesh", code: "BD", cities: ["Dhaka", "Chittagong", "Sylhet", "Khulna", "Rajshahi", "Barisal", "Comilla", "Rangpur"] },
-        { name: "Belgium", code: "BE", cities: ["Brussels", "Antwerp", "Ghent", "Charleroi", "Liège"] },
-        { name: "Brazil", code: "BR", cities: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Fortaleza", "Belo Horizonte"] },
-        { name: "Canada", code: "CA", cities: ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton", "Winnipeg", "Quebec City", "Halifax", "Victoria"] },
-        { name: "China", code: "CN", cities: ["Beijing", "Shanghai", "Shenzhen", "Guangzhou", "Chengdu", "Chongqing", "Hangzhou"] },
-        { name: "Colombia", code: "CO", cities: ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena"] },
-        { name: "Denmark", code: "DK", cities: ["Copenhagen", "Aarhus", "Odense", "Aalborg"] },
-        { name: "Egypt", code: "EG", cities: ["Cairo", "Alexandria", "Giza", "Shubra El Kheima", "Port Said"] },
-        { name: "Finland", code: "FI", cities: ["Helsinki", "Espoo", "Tampere", "Vantaa", "Oulu"] },
-        { name: "France", code: "FR", cities: ["Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille"] },
-        { name: "Germany", code: "DE", cities: ["Berlin", "Munich", "Frankfurt", "Hamburg", "Cologne", "Stuttgart", "Dusseldorf", "Leipzig", "Dresden", "Nuremberg"] },
-        { name: "Greece", code: "GR", cities: ["Athens", "Thessaloniki", "Patras", "Heraklion", "Larissa"] },
-        { name: "India", code: "IN", cities: ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Pune", "Surat", "Jaipur", "Lucknow", "Nagpur"] },
-        { name: "Indonesia", code: "ID", cities: ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Makassar"] },
-        { name: "Iran", code: "IR", cities: ["Tehran", "Mashhad", "Isfahan", "Karaj", "Shiraz", "Tabriz"] },
-        { name: "Iraq", code: "IQ", cities: ["Baghdad", "Basra", "Mosul", "Erbil", "Najaf"] },
-        { name: "Ireland", code: "IE", cities: ["Dublin", "Cork", "Limerick", "Galway", "Waterford"] },
-        { name: "Italy", code: "IT", cities: ["Rome", "Milan", "Naples", "Turin", "Palermo", "Genoa", "Bologna", "Florence"] },
-        { name: "Japan", code: "JP", cities: ["Tokyo", "Yokohama", "Osaka", "Nagoya", "Sapporo", "Fukuoka", "Kobe", "Kyoto"] },
-        { name: "Kenya", code: "KE", cities: ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret"] },
-        { name: "Kuwait", code: "KW", cities: ["Kuwait City", "Al Ahmadi", "Hawalli", "Farwaniya"] },
-        { name: "Lebanon", code: "LB", cities: ["Beirut", "Tripoli", "Sidon", "Tyre", "Baalbek"] },
-        { name: "Malaysia", code: "MY", cities: ["Kuala Lumpur", "George Town", "Johor Bahru", "Ipoh", "Malacca City", "Shah Alam", "Kota Kinabalu", "Kuching"] },
-        { name: "Mexico", code: "MX", cities: ["New Mexico City", "Guadalajara", "Monterrey", "Puebla", "Tijuana", "Mérida"] },
-        { name: "Morocco", code: "MA", cities: ["Casablanca", "Rabat", "Fes", "Marrakesh", "Tangier", "Agadir"] },
-        { name: "Netherlands", code: "NL", cities: ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"] },
-        { name: "New Zealand", code: "NZ", cities: ["Auckland", "Wellington", "Christchurch", "Hamilton", "Tauranga"] },
-        { name: "Nigeria", code: "NG", cities: ["Lagos", "Kano", "Ibadan", "Abuja", "Port Harcourt"] },
-        { name: "Norway", code: "NO", cities: ["Oslo", "Bergen", "Trondheim", "Stavanger", "Bærum"] },
-        { name: "Oman", code: "OM", cities: ["Muscat", "Salalah", "Sohar", "Nizwa", "Sur"] },
-        { name: "Pakistan", code: "PK", cities: ["Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan", "Peshawar", "Quetta", "Gujranwala", "Sialkot", "Sargodha", "Bahawalpur", "Sukkur", "Hyderabad", "Gujrat", "Jhelum", "Sahiwal"] },
-        { name: "Philippines", code: "PH", cities: ["Manila", "Quezon City", "Davao City", "Cebu City", "Zamboanga City"] },
-        { name: "Poland", code: "PL", cities: ["Warsaw", "Kraków", "Łódź", "Wrocław", "Poznań", "Gdańsk"] },
-        { name: "Portugal", code: "PT", cities: ["Lisbon", "Porto", "Vila Nova de Gaia", "Amadora", "Braga"] },
-        { name: "Qatar", code: "QA", cities: ["Doha", "Al Wakrah", "Al Khor", "Dukhan", "Al Rayyan"] },
-        { name: "Russia", code: "RU", cities: ["Moscow", "Saint Petersburg", "Novosibirsk", "Yekaterinburg", "Kazan"] },
-        { name: "Saudi Arabia", code: "SA", cities: ["Riyadh", "Jeddah", "Mecca", "Medina", "Dammam", "Khobar", "Tabuk", "Abha", "Taif", "Jubail"] },
-        { name: "Singapore", code: "SG", cities: ["Singapore City"] },
-        { name: "South Africa", code: "ZA", cities: ["Johannesburg", "Cape Town", "Durban", "Pretoria", "Port Elizabeth", "Bloemfontein", "East London"] },
-        { name: "South Korea", code: "KR", cities: ["Seoul", "Busan", "Incheon", "Daegu", "Daejeon"] },
-        { name: "Spain", code: "ES", cities: ["Madrid", "Barcelona", "Valencia", "Seville", "Zaragoza", "Malaga"] },
-        { name: "Sri Lanka", code: "LK", cities: ["Colombo", "Kandy", "Galle", "Jaffna", "Negombo"] },
-        { name: "Sweden", code: "SE", cities: ["Stockholm", "Gothenburg", "Malmö", "Uppsala", "Västerås"] },
-        { name: "Switzerland", code: "CH", cities: ["Zurich", "Geneva", "Basel", "Lausanne", "Bern"] },
-        { name: "Thailand", code: "TH", cities: ["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Nakhon Ratchasima"] },
-        { name: "Turkey", code: "TR", cities: ["Istanbul", "Ankara", "Izmir", "Bursa", "Antalya", "Adana", "Gaziantep", "Konya", "Mersin", "Trabzon"] },
-        { name: "UAE", code: "AE", cities: ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Al Ain", "Ras Al Khaimah", "Fujairah", "Umm Al Quwain"] },
-        { name: "United Kingdom", code: "UK", cities: ["London", "Manchester", "Birmingham", "Leeds", "Glasgow", "Liverpool", "Newcastle", "Sheffield", "Bristol", "Edinburgh", "Cardiff", "Belfast"] },
-        { name: "United States", code: "US", cities: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose", "Austin", "Miami", "Boston", "San Francisco"] },
-        { name: "Vietnam", code: "VN", cities: ["Ho Chi Minh City", "Hanoi", "Da Nang", "Hai Phong", "Can Tho"] }
-    ];
+    const allCountries = CSC_Country.getAllCountries();
+    return allCountries.map(c => ({
+        name: c.name,
+        code: c.isoCode,
+        cities: [] // Cities are loaded on demand via getCitiesByCountry
+    }));
 };
 
 export const getCitiesByCountry = async (countryName: string): Promise<string[]> => {
-    const countries = await getCountries();
-    const country = countries.find(c => c.name === countryName);
-    return country ? country.cities : [];
+    const allCountries = CSC_Country.getAllCountries();
+    const country = allCountries.find(c => c.name === countryName);
+    if (!country) return [];
+    
+    const cities = CSC_City.getCitiesOfCountry(country.isoCode);
+    const cityNames = cities ? cities.map(city => city.name) : [];
+    return Array.from(new Set(cityNames));
 };
 
 // --- Review & Ratings System ---
@@ -1383,7 +1120,7 @@ export const getLawyerReviews = async (lawyerId: string): Promise<Review[]> => {
 
 export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
   const reviewId = `review_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
-  const path = `reviews/${reviewId}`;
+  let currentPath = `reviews/${reviewId}`;
   try {
     const newReview: Review = {
       ...review,
@@ -1401,14 +1138,30 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
       : 5.0;
 
     // Update lawyer profile
+    currentPath = `lawyers/${lawyerId}`;
     const lawyerRef = doc(db, 'lawyers', lawyerId);
     await updateDoc(lawyerRef, {
       rating: avgRating,
       reviewCount: count
     });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    handleFirestoreError(error, OperationType.WRITE, currentPath);
     throw error;
+  }
+};
+
+export const getAllReviews = async (): Promise<Review[]> => {
+  const path = 'reviews';
+  try {
+    const querySnapshot = await getDocs(collection(db, path));
+    const reviews: Review[] = [];
+    querySnapshot.forEach((doc) => {
+      reviews.push(doc.data() as Review);
+    });
+    return reviews;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path, false);
+    return [];
   }
 };
 
@@ -1461,38 +1214,6 @@ export const getLegalQuestions = async (): Promise<LegalQuestion[]> => {
     querySnapshot.forEach((docSnap) => {
       questions.push(docSnap.data() as LegalQuestion);
     });
-    
-    // Seed standard fallback starter questions to boost SEO and public visual layout immediately
-    if (questions.length === 0) {
-      return [
-        {
-          id: 'q_1',
-          title: 'What are the legal standards of child welfare and custody determinations across jurisdictions?',
-          description: 'I need to understand what the standard custody codes look like regarding child welfare. How do family court arbiters weigh parental resources versus historical caretaker stability globally?',
-          clientId: 'static_client_1',
-          clientName: 'Julian Rivers',
-          category: 'Family Law',
-          createdAt: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
-          answersCount: 1,
-          views: 142,
-          upvotes: 18,
-          downvotes: 1
-        },
-        {
-          id: 'q_2',
-          title: 'How can a private SaaS company register and protect an international Trademark?',
-          description: 'We are launching a software startup and want to secure our brand name and digital assets internationally under relevant treaties (Madrid Protocol, WIPO). What is the best step-by-step roadmap?',
-          clientId: 'static_client_2',
-          clientName: 'TechVibe Group',
-          category: 'Corporate Law',
-          createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
-          answersCount: 0,
-          views: 95,
-          upvotes: 15,
-          downvotes: 0
-        }
-      ];
-    }
     
     return questions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
@@ -1561,21 +1282,6 @@ export const getQuestionAnswers = async (questionId: string): Promise<LegalAnswe
       answers.push(docSnap.data() as LegalAnswer);
     });
 
-    if (answers.length === 0 && questionId === 'q_1') {
-      return [{
-        id: 'ans_1',
-        questionId: 'q_1',
-        lawyerId: 'lawyer_2',
-        lawyerName: 'Advocate Ayesha Malik',
-        lawyerTitle: 'Senior Partner',
-        lawyerPicture: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256',
-        content: 'Under Muslim Personal Law and judicial precedent in family courts, a mother has the right of Hizanat (custody) of her male child until he reaches 7 years of age, and her female child until she attains puberty. However, remember that the "Welfare of the Minor" is the overriding condition. If any proof of neglect, poor moral upbringing, or unsafe environment is demonstrated, the court can deviate and transfer custody. You should file an application in the Family Court under Section 25 of the Guardians and Wards Act 1890.',
-        createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
-        upvotes: 12,
-        downvotes: 1
-      }];
-    }
-
     return answers.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, path, false);
@@ -1634,87 +1340,7 @@ export const getNotifications = async (userId: string, role?: string): Promise<A
       allNotifs.push(docSnap.data() as AppNotification);
     });
 
-    // Seed initial notifications if empty using the requested notification categories:
-    // "new sawal ka notice next hearing ka notice next payment date ka notice new article ka notice legal job ka notice"
-    if (allNotifs.length === 0) {
-      const defaultNotifs: AppNotification[] = [
-        {
-          id: 'notif_seed_1',
-          userId: 'all',
-          title: 'New Legal Article Published',
-          message: 'Our new article has been published: "Fundamental Laws of Child Visitation Rights". Share it with your network!',
-          type: 'article',
-          createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(), // 4h ago
-          isRead: false,
-          link: '/qa'
-        },
-        {
-          id: 'notif_seed_2',
-          userId: 'lawyers',
-          title: 'New Legal Question Asked',
-          message: 'A user has asked a new question regarding child custody. Provide a quick answer to attract potential clients!',
-          type: 'question',
-          createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), // 2h ago
-          isRead: false,
-          link: '/qa'
-        },
-        {
-          id: 'notif_seed_3',
-          userId: 'lawyers',
-          title: 'New Legal Job Opportunity / Corporate Legal Assistant Needed',
-          message: 'A prominent law firm is looking for a Legal Associate with 2 years of experience. Competitive salary offered. Apply now!',
-          type: 'job',
-          createdAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString(), // 6h ago
-          isRead: false,
-          link: '/qa'
-        }
-      ];
-
-      // Add user-specific hearing and payment notifications if user is logged in
-      if (userId && userId !== 'anonymous') {
-        const isClient = role === 'client';
-        defaultNotifs.push({
-          id: 'notif_seed_4',
-          userId: userId,
-          title: isClient ? 'Case Hearing Notice' : 'Client Case Hearing Due',
-          message: 'The next hearing for the case State vs. John Doe is scheduled for June 25th, 2026 at the High Court. Please be prepared!',
-          type: 'hearing',
-          createdAt: new Date(Date.now() - 1 * 3600 * 1000).toISOString(), // 1h ago
-          isRead: false,
-          link: isClient ? '/dashboard/client' : '/dashboard/lawyer/cases'
-        });
-
-        defaultNotifs.push({
-          id: 'notif_seed_5',
-          userId: userId,
-          title: isClient ? 'Ledger Payment Date Notice' : 'Ledger Payment Due',
-          message: `The deadline for the remaining payment ($500) for Case ID #C-501 is June 30th, 2026. Please update the ledger accordingly.`,
-          type: 'payment',
-          createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(), // 8h ago
-          isRead: false,
-          link: isClient ? '/dashboard/client' : '/dashboard/lawyer/ledger'
-        });
-      }
-
-      // Write them to firestore so that they are persisted!
-      try {
-        for (const notif of defaultNotifs) {
-          await setDoc(doc(db, path, notif.id), notif);
-        }
-      } catch (writeErr) {
-        console.warn("Could not persist initial notification seeds to Firestore (running with local fallbacks):", writeErr);
-      }
-
-      // Return the generated ones that match our filters
-      return defaultNotifs.filter(n => 
-        n.userId === 'all' || 
-        n.userId === userId || 
-        (n.userId === 'lawyers' && role === 'lawyer') ||
-        (n.userId === 'clients' && role === 'client')
-      ).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    // Filter relevant notifications for the current user
+    // Return notifications for the current user
     return allNotifs.filter(n => 
       n.userId === 'all' || 
       n.userId === userId || 
@@ -1723,72 +1349,8 @@ export const getNotifications = async (userId: string, role?: string): Promise<A
     ).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   } catch (error) {
-    console.warn("Could not retrieve notifications from Firestore database, using local notifications fallback:", error);
-    // Return standard fallback notifications so that NotificationCenter always works beautifully!
-    const isClient = role === 'client';
-    const defaultNotifs: AppNotification[] = [
-      {
-        id: 'notif_fallback_1',
-        userId: 'all',
-        title: 'New Legal Article Published',
-        message: 'Our new article has been published: "Fundamental Laws of Child Visitation Rights". Share it with your network!',
-        type: 'article',
-        createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
-        isRead: false,
-        link: '/qa'
-      },
-      {
-        id: 'notif_fallback_2',
-        userId: 'lawyers',
-        title: 'New Legal Question Asked',
-        message: 'A user has asked a new question regarding child custody. Provide a quick answer to attract potential clients!',
-        type: 'question',
-        createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-        isRead: false,
-        link: '/qa'
-      },
-      {
-        id: 'notif_fallback_3',
-        userId: 'lawyers',
-        title: 'New Legal Job Opportunity / Corporate Legal Assistant Needed',
-        message: 'A prominent law firm is looking for a Legal Associate with 2 years of experience. Competitive salary offered. Apply now!',
-        type: 'job',
-        createdAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
-        isRead: false,
-        link: '/qa'
-      }
-    ];
-
-    if (userId && userId !== 'anonymous') {
-      defaultNotifs.push({
-        id: 'notif_fallback_4',
-        userId: userId,
-        title: isClient ? 'Case Hearing Notice' : 'Client Case Hearing Due',
-        message: 'The next hearing for the case State vs. John Doe is scheduled for June 25th, 2026 at the High Court. Please be prepared!',
-        type: 'hearing',
-        createdAt: new Date(Date.now() - 1 * 3600 * 1000).toISOString(),
-        isRead: false,
-        link: isClient ? '/dashboard/client' : '/dashboard/lawyer/cases'
-      });
-
-      defaultNotifs.push({
-        id: 'notif_fallback_5',
-        userId: userId,
-        title: isClient ? 'Ledger Payment Date Notice' : 'Ledger Payment Due',
-        message: `The deadline for the remaining payment ($500) for Case ID #C-501 is June 30th, 2026. Please update the ledger accordingly.`,
-        type: 'payment',
-        createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
-        isRead: false,
-        link: isClient ? '/dashboard/client' : '/dashboard/lawyer/ledger'
-      });
-    }
-
-    return defaultNotifs.filter(n => 
-      n.userId === 'all' || 
-      n.userId === userId || 
-      (n.userId === 'lawyers' && role === 'lawyer') ||
-      (n.userId === 'clients' && role === 'client')
-    ).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    console.warn("Could not retrieve notifications from Firestore database:", error);
+    return [];
   }
 };
 
@@ -1824,6 +1386,21 @@ export const markNotificationAsRead = async (id: string) => {
     await setDoc(doc(db, 'notifications', id), { isRead: true }, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
+  }
+};
+
+export const getAuthorities = async (): Promise<any[]> => {
+  try {
+    const q = query(collection(db, 'authorities'));
+    const querySnapshot = await getDocs(q);
+    const authorities: any[] = [];
+    querySnapshot.forEach((doc) => {
+      authorities.push({ id: doc.id, ...doc.data() });
+    });
+    return authorities;
+  } catch (error) {
+    console.warn("Could not fetch authorities from Firestore:", error);
+    return [];
   }
 };
 

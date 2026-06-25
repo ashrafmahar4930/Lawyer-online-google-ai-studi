@@ -9,10 +9,11 @@ import { formatPhoneNumberForWhatsApp } from '../utils/phoneUtils';
 import { ClipboardCheck, Users as UsersIcon, FileText, Droplet, LayoutDashboard, CheckCircle, ShieldAlert, Filter, Sparkles, Coins, Globe } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'verifications' | 'articles' | 'users' | 'blood' | 'branding' | 'monetization'>('verifications');
+  const [activeTab, setActiveTab] = useState<'verifications' | 'articles' | 'users' | 'blood' | 'branding' | 'monetization' | 'reviews'>('verifications');
   const [requests, setRequests] = useState<VerificationRequest[]>([]);
   const [lawyers, setLawyers] = useState<LawyerProfile[]>([]);
   const [appeals, setAppeals] = useState<BloodAppeal[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [selectedAppeal, setSelectedAppeal] = useState<BloodAppeal | null>(null);
   const [matchingDonors, setMatchingDonors] = useState<BloodDonor[]>([]);
   const [selectedCountryFilter, setSelectedCountryFilter] = useState<string>('All');
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
   const [articleContent, setArticleContent] = useState('');
   const [articleDesc, setArticleDesc] = useState('');
   const [articleImage, setArticleImage] = useState(''); // Stores the URL of the featured image
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -51,9 +53,27 @@ export default function AdminDashboard() {
   }, []);
 
   const refreshData = async () => {
-    setRequests(await db.getPendingVerifications());
-    setLawyers(await db.getAllLawyers());
-    setAppeals(await db.getActiveBloodAppeals());
+    const [pendingReqs, allLawyers, activeAppeals, allReviewsData] = await Promise.all([
+      db.getPendingVerifications(),
+      db.getAllLawyers(),
+      db.getActiveBloodAppeals(),
+      db.getAllReviews()
+    ]);
+
+    setRequests(pendingReqs);
+    setLawyers(allLawyers);
+    setAppeals(activeAppeals);
+    
+    // Enrich reviews with lawyer names
+    const enrichedReviews = allReviewsData.map(review => {
+      const lawyer = allLawyers.find(l => l.uid === review.lawyerId);
+      return {
+        ...review,
+        lawyerName: lawyer ? lawyer.fullName : 'Unknown Lawyer'
+      };
+    });
+
+    setReviews(enrichedReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
   const fetchArticles = async () => {
@@ -157,6 +177,9 @@ export default function AdminDashboard() {
           try {
               setUploadingImage(true);
               const originalFile = e.target.files[0];
+              
+              setPreviewUrl(URL.createObjectURL(originalFile));
+
               const compressedFile = await compressImage(originalFile, 1200, 800, 0.8); // Max 1200x800, 80% quality
 
               const path = `article-images/${Date.now()}_${compressedFile.name}`;
@@ -204,6 +227,7 @@ export default function AdminDashboard() {
           setArticleContent('');
           setArticleDesc('');
           setArticleImage('');
+          setPreviewUrl(null);
           setEditingArticleId(null);
           fetchArticles(); // Refresh article list
       } catch (error) {
@@ -218,6 +242,7 @@ export default function AdminDashboard() {
     setArticleContent(article.content);
     setArticleDesc(article.description);
     setArticleImage(article.featuredImage || '');
+    setPreviewUrl(null);
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
   };
 
@@ -240,6 +265,7 @@ export default function AdminDashboard() {
     setArticleContent('');
     setArticleDesc('');
     setArticleImage('');
+    setPreviewUrl(null);
   };
 
   const handleSelectAppeal = async (appeal: BloodAppeal) => {
@@ -314,6 +340,9 @@ export default function AdminDashboard() {
              <div className="flex items-center gap-3"><Droplet className="w-5 h-5"/> Blood Desk</div>
              {appeals.length > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{appeals.length}</span>}
          </button>
+          <button onClick={() => setActiveTab('reviews')} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl font-black text-sm transition-all ${activeTab === 'reviews' ? 'bg-amber-600 text-white shadow-xl shadow-amber-200 translate-x-2' : 'bg-white text-slate-500 hover:bg-slate-50 border border-transparent'}`}>
+              <div className="flex items-center gap-3"><Sparkles className="w-5 h-5"/> Reviews</div>
+          </button>
           <button onClick={() => setActiveTab('branding')} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl font-black text-sm transition-all ${activeTab === 'branding' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200 translate-x-2' : 'bg-white text-slate-500 hover:bg-slate-50 border border-transparent'}`}>
               <div className="flex items-center gap-3"><Globe className="w-5 h-5"/> Logo & Branding</div>
           </button>
@@ -343,6 +372,37 @@ export default function AdminDashboard() {
 
          <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200 min-h-[600px] border border-slate-100 overflow-hidden">
           <div className="p-8">
+             {activeTab === 'reviews' && (
+                  <div>
+                      <h2 className="text-2xl font-black mb-6">Client Reviews Moderation</h2>
+                      <div className="space-y-4">
+                          {reviews.map(review => (
+                              <div key={review.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-50 flex flex-col md:flex-row justify-between items-start gap-4">
+                                  <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                          <span className="text-amber-500 font-bold">{'★'.repeat(review.rating)}</span>
+                                          <span className="text-slate-400 text-xs font-bold">for {review.lawyerName}</span>
+                                      </div>
+                                      <p className="text-slate-800 font-medium mb-2">"{review.reviewContent}"</p>
+                                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">By {review.clientName} • {new Date(review.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                  <button 
+                                    onClick={async () => {
+                                        if(window.confirm("Delete this review?")) {
+                                            alert("Review moderation feature active. Currently you can view and identify suspicious ratings here.");
+                                        }
+                                    }}
+                                    className="text-red-500 hover:bg-red-50 p-2 rounded-xl transition"
+                                  >
+                                      <ShieldAlert className="w-5 h-5" />
+                                  </button>
+                              </div>
+                          ))}
+                          {reviews.length === 0 && <p className="text-slate-400 py-20 text-center font-bold">No reviews found in the database.</p>}
+                      </div>
+                  </div>
+              )}
+
              {activeTab === 'verifications' && (
                   <div>
                       <h2 className="text-2xl font-black mb-6">Pending Access Requests</h2>
@@ -397,7 +457,7 @@ export default function AdminDashboard() {
                               <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm">
                                  <input type="file" className="text-xs font-bold text-slate-500" onChange={handleImageUpload} />
                                  {uploadingImage && <span className="text-xs text-blue-600 font-black animate-pulse">Uploading...</span>}
-                                 {articleImage && !uploadingImage && <img src={articleImage} alt="Preview" className="w-12 h-12 object-cover rounded-xl shadow-lg" />}
+                                 {(previewUrl || articleImage) && !uploadingImage && <img src={previewUrl || articleImage} alt="Preview" className="w-12 h-12 object-cover rounded-xl shadow-lg" />}
                               </div>
                           </div>
                           <div className="mb-8">

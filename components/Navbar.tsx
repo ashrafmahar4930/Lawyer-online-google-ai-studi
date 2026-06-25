@@ -53,7 +53,13 @@ export default function Navbar() {
             </div>
 
             {/* Highly dynamic rotating domain brand badge in header */}
-            <AnimatedLogo />
+            <div className="flex flex-col">
+              <AnimatedLogo />
+              <div className="flex items-center gap-1 -mt-0.5 ml-1">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                <span className="text-[7px] text-blue-400 font-black uppercase tracking-[0.1em]">System Active</span>
+              </div>
+            </div>
           </Link>
 
           {/* Desktop Menu */}

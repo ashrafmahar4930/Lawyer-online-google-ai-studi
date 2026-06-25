@@ -4,91 +4,94 @@ service cloud.firestore {
     
     // --- HELPERS ---
     function isSignedIn() {
-      return request.auth != null;
+      return request.auth != null && request.auth.uid != null;
     }
     
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'admin@jurisconnect.com' || request.auth.token.email == 'ashrafmahar4930@gmail.com');
+      return isSignedIn() && (
+        request.auth.token.email.lower() == 'admin@jurisconnect.com' ||
+        request.auth.token.email.lower() == 'ashrafmahar4930@gmail.com'
+      );
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
     // --- COLLECTIONS ---
     
-    match /blood_appeals/{appealId} {
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+    
+    match /lawyers/{lawyerId} {
+      allow read: if true;
+      allow write: if isOwner(lawyerId) || isAdmin() || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount']));
+    }
+    
+    match /reviews/{reviewId} {
       allow read: if true;
       allow write: if isSignedIn();
     }
     
-    match /blood_donors/{donorId} {
-      allow read: if true;
-      allow write: if isSignedIn();
+    match /cases/{caseId} {
+      allow read, write: if isAdmin() || (isSignedIn() && (
+        request.auth.uid == resource.data.lawyerId || 
+        request.auth.uid == request.resource.data.lawyerId
+      ));
     }
-
-    // Articles - Publicly readable, Admin write
+    
+    match /ledger/{entryId} {
+      allow read, write: if isSignedIn(); 
+    }
+    
     match /articles/{articleId} {
       allow read: if true;
-      allow write: if isAdmin() || !exists(/databases/$(database)/documents/articles/article_1);
+      allow write: if isAdmin();
     }
-
-    // Lawyers - Publicly readable, Owner/Admin write
-    match /lawyers/{lawyerId} {
-      allow read: if true;
-      allow write: if (isSignedIn() && request.auth.uid == lawyerId) || isAdmin() || !exists(/databases/$(database)/documents/lawyers/lawyer_1);
+    
+    match /verifications/{requestId} {
+      allow read, write: if isAdmin() || (isSignedIn() && (
+        request.auth.uid == resource.data.lawyerId ||
+        request.auth.uid == request.resource.data.lawyerId
+      ));
     }
-
-    // Users - Private, Owner/Admin access
-    match /users/{userId} {
-      allow read, write: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
-    }
-
-    // Cases - Protected
-    match /cases/{caseId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Ledger - Protected
-    match /ledger/{entryId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Verifications - Admin/Owner
-    match /verifications/{reqId} {
-      allow read: if isAdmin();
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
-    }
-
-    // Reviews - Publicly readable, Authenticated users can write (create), Admin can delete
-    match /reviews/{reviewId} {
+    
+    match /blood_appeals/{appealId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.requesterId == request.auth.uid);
     }
-
-    // Questions - Publicly readable, Authenticated users can create/update, Admin can delete
+    
+    match /blood_donors/{donorId} {
+      allow read: if true;
+      allow write: if isOwner(donorId) || isAdmin();
+    }
+    
     match /questions/{questionId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid == resource.data.clientId || isAdmin());
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.clientId == request.auth.uid);
     }
-
-    // Answers - Publicly readable, Authenticated users can create/update, Admin can delete
+    
     match /answers/{answerId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid == resource.data.lawyerId || isAdmin());
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.lawyerId == request.auth.uid);
     }
-
-    // Notifications - Authenticated read, write if signed in
+    
     match /notifications/{notificationId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read, write: if isAdmin() || (isSignedIn() && (
+        request.auth.uid == resource.data.userId || 
+        request.auth.uid == request.resource.data.userId ||
+        resource.data.userId == 'lawyers' ||
+        resource.data.userId == 'clients' ||
+        resource.data.userId == 'all'
+      ));
     }
 
-    // Safety net
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
   }
 }

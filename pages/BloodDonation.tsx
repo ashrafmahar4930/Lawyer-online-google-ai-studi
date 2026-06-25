@@ -26,6 +26,11 @@ export default function BloodDonation() {
   useEffect(() => {
     const processSharedAppeal = async () => {
       const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'appeal') {
+        setActiveTab('appeal');
+      }
+
       const sharedId = params.get('appealId');
       if (sharedId) {
         try {
@@ -159,10 +164,8 @@ Contact Mobile: ${appeal.mobile} (موبائل نمبر)
 
         // Load cities if country is available
         if (initialCountry) {
-          const country = countryList.find(c => c.name === initialCountry);
-          if (country) {
-            setCities(country.cities);
-          }
+          const loadedCities = await getCitiesByCountry(initialCountry);
+          setCities(loadedCities);
         }
       }
     };
@@ -175,8 +178,12 @@ Contact Mobile: ${appeal.mobile} (موبائل نمبر)
     } else {
       setAppealForm(prev => ({ ...prev, country: countryName, city: '' }));
     }
-    const country = countries.find(c => c.name === countryName);
-    setCities(country ? country.cities : []);
+    if (countryName) {
+      const loadedCities = await getCitiesByCountry(countryName);
+      setCities(loadedCities);
+    } else {
+      setCities([]);
+    }
   };
 
   const handleDonorSubmit = async (e: React.FormEvent) => {

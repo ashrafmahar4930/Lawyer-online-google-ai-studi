@@ -16,6 +16,13 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [isGeneratingBio, setIsGeneratingBio] = useState(false);
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [countries, setCountries] = useState<import('../../types').Country[]>([]);
+
+  useEffect(() => {
+    db.getCountries().then(setCountries);
+  }, []);
+
   const generateAIBio = async () => {
     if (!tempProfile.fullName) {
       alert("Please enter your Full Name first before generating an AI bio.");
@@ -96,6 +103,10 @@ export default function Profile() {
           try {
               setUploading(true);
               const originalFile = e.target.files[0];
+              
+              // Set local preview instantly
+              setPreviewUrl(URL.createObjectURL(originalFile));
+
               const compressedFile = await compressImage(originalFile, 800, 800, 0.7);
 
               const path = `profile-pictures/${user.uid}/${Date.now()}_${compressedFile.name}`;
@@ -126,7 +137,7 @@ export default function Profile() {
             <div className="relative group cursor-pointer w-32 h-32 flex-shrink-0">
                 <div className="w-32 h-32 rounded-full bg-slate-200 overflow-hidden border-4 border-white/20 shadow-xl">
                     <img 
-                         src={profile?.picture || `https://picsum.photos/seed/${user.uid}/200`} 
+                         src={previewUrl || tempProfile.picture || profile?.picture || `https://picsum.photos/seed/${user.uid}/200`} 
                          alt="Profile" 
                          className="w-full h-full object-cover"
                     />
@@ -299,7 +310,7 @@ export default function Profile() {
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Country</label>
                           <select 
                             className="w-full border-slate-200 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-white" 
-                            value={['Pakistan', 'United Kingdom', 'United States', 'Canada', 'United Arab Emirates', 'Saudi Arabia'].includes(tempProfile.country || '') ? tempProfile.country : (tempProfile.country ? 'Other' : '')}
+                            value={countries.some(c => c.name === tempProfile.country) || !tempProfile.country ? tempProfile.country || '' : 'Other'}
                             onChange={e => {
                               const val = e.target.value;
                               if (val === 'Other') {
@@ -310,16 +321,13 @@ export default function Profile() {
                             }}
                           >
                             <option value="">Select Country...</option>
-                            <option value="Pakistan">Pakistan</option>
-                            <option value="United Kingdom">United Kingdom</option>
-                            <option value="United States">United States</option>
-                            <option value="Canada">Canada</option>
-                            <option value="United Arab Emirates">United Arab Emirates</option>
-                            <option value="Saudi Arabia">Saudi Arabia</option>
+                            {countries.map(c => (
+                              <option key={c.code} value={c.name}>{c.name}</option>
+                            ))}
                             <option value="Other">Other (Custom Country)</option>
                           </select>
                           
-                          {(!['Pakistan', 'United Kingdom', 'United States', 'Canada', 'United Arab Emirates', 'Saudi Arabia', ''].includes(tempProfile.country || '')) && (
+                          {(!countries.some(c => c.name === tempProfile.country) && tempProfile.country !== '' && tempProfile.country !== undefined) && (
                             <div className="mt-2 animate-in fade-in duration-200">
                               <input 
                                 placeholder="Enter Custom Country..." 

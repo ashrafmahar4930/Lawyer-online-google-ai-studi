@@ -15,6 +15,7 @@ interface FirestoreErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
+  stackTrace?: string;
   authInfo: {
     userId?: string | null;
     email?: string | null;
@@ -31,6 +32,7 @@ interface FirestoreErrorInfo {
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null, shouldThrow: boolean = true) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
+    stackTrace: error instanceof Error ? error.stack : new Error().stack,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -62,9 +64,10 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   
   // Skill requirement: Throw JSON string for the agent to parse
   const errorJson = JSON.stringify(errInfo);
-  console.error('Firestore Error:', errorJson);
-  
   if (shouldThrow) {
+    console.error('Firestore Error:', errorJson);
     throw new Error(errorJson);
+  } else {
+    console.warn('Firestore Warning (Caught):', errorJson);
   }
 }

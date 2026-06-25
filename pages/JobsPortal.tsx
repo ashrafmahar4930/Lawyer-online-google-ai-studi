@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExternalLink, Briefcase, Globe2, MapPin, Search, Building2, MapPin as MapPinIcon, Clock } from 'lucide-react';
+import { getAuthorities } from '../services/mockDataService';
 
 const JOB_REGIONS = [
   {
@@ -64,11 +65,50 @@ export default function JobsPortal() {
   const [activeTab, setActiveTab] = useState<'platform' | 'official'>('platform');
   const [activeRegion, setActiveRegion] = useState('Global');
   const [searchQuery, setSearchQuery] = useState('');
+  const [authorities, setAuthorities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'official') {
+      const fetchAuthorities = async () => {
+        setIsLoading(true);
+        try {
+          const data = await getAuthorities();
+          setAuthorities(data);
+          if (data.length > 0 && !data.some(a => a.region === activeRegion)) {
+             // Maybe set first region as active if current one isn't in DB
+          }
+        } catch (err) {
+          console.error("Failed to load authorities:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchAuthorities();
+    }
+  }, [activeTab]);
 
   const filteredPlatformJobs = MOCK_PLATFORM_JOBS.filter(job => 
     job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     job.lawFirm.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Group authorities by region for the sidebar
+  const authoritiesByRegion = authorities.reduce((acc: any, auth: any) => {
+    const region = auth.region || 'Others';
+    if (!acc[region]) acc[region] = [];
+    acc[region].push(auth);
+    return acc;
+  }, {});
+
+  const regions = Object.keys(authoritiesByRegion).sort();
+  const displayRegions = regions.length > 0 ? regions : JOB_REGIONS.map(r => r.region);
+  
+  useEffect(() => {
+    if (regions.length > 0 && activeRegion === 'Global') {
+      setActiveRegion(regions[0]);
+    }
+  }, [regions]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl animate-in fade-in zoom-in-95 duration-500">
@@ -161,27 +201,50 @@ export default function JobsPortal() {
         <div className="flex flex-col md:flex-row gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Sidebar Navigation */}
           <div className="w-full md:w-64 flex-shrink-0 space-y-2">
-            {JOB_REGIONS.map((regionGroup) => (
-              <button
-                key={regionGroup.region}
-                onClick={() => setActiveRegion(regionGroup.region)}
-                className={`w-full flex items-center gap-3 text-left px-4 py-3 rounded-lg font-semibold transition ${
-                  activeRegion === regionGroup.region 
-                    ? 'bg-blue-600 text-white shadow-md' 
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                {regionGroup.region === 'International & Global' ? <Globe2 className="w-5 h-5" /> : <MapPin className="w-5 h-5" />}
-                {regionGroup.region}
-              </button>
-            ))}
+            {isLoading ? (
+              <div className="animate-pulse space-y-2">
+                {[1,2,3].map(i => <div key={i} className="h-12 bg-slate-200 rounded-lg w-full"></div>)}
+              </div>
+            ) : regions.length > 0 ? (
+              regions.map((region) => (
+                <button
+                  key={region}
+                  onClick={() => setActiveRegion(region)}
+                  className={`w-full flex items-center gap-3 text-left px-4 py-3 rounded-lg font-semibold transition ${
+                    activeRegion === region 
+                      ? 'bg-blue-600 text-white shadow-md' 
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  <MapPin className="w-5 h-5" />
+                  {region}
+                </button>
+              ))
+            ) : (
+              JOB_REGIONS.map((regionGroup) => (
+                <button
+                  key={regionGroup.region}
+                  onClick={() => setActiveRegion(regionGroup.region)}
+                  className={`w-full flex items-center gap-3 text-left px-4 py-3 rounded-lg font-semibold transition ${
+                    activeRegion === regionGroup.region 
+                      ? 'bg-blue-600 text-white shadow-md' 
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {regionGroup.region === 'International & Global' ? <Globe2 className="w-5 h-5" /> : <MapPin className="w-5 h-5" />}
+                  {regionGroup.region}
+                </button>
+              ))
+            )}
           </div>
 
           {/* Portal Links */}
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {JOB_REGIONS.find(r => r.region === activeRegion)?.sites.map((site) => (
+            {isLoading ? (
+              [1,2,3,4].map(i => <div key={i} className="h-40 bg-white border border-slate-200 rounded-xl animate-pulse"></div>)
+            ) : (authoritiesByRegion[activeRegion] || JOB_REGIONS.find(r => r.region === activeRegion)?.sites || []).map((site: any) => (
               <a
-                key={site.id}
+                key={site.id || site.name}
                 href={site.url}
                 target="_blank"
                 rel="noopener noreferrer"

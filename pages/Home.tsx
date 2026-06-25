@@ -106,13 +106,9 @@ export default function Home() {
 
   // Helper to get flag code
   const getFlagUrl = (countryName?: string) => {
-      const map: Record<string, string> = {
-          'Pakistan': 'pk', 'United States': 'us', 'USA': 'us', 'United Kingdom': 'gb', 'UK': 'gb',
-          'Canada': 'ca', 'Australia': 'au', 'India': 'in', 'UAE': 'ae',
-          'Saudi Arabia': 'sa', 'Turkey': 'tr', 'Germany': 'de', 'France': 'fr',
-          'Malaysia': 'my', 'Singapore': 'sg', 'South Africa': 'za', 'Bangladesh': 'bd'
-      };
-      const code = map[countryName || ''] || 'pk'; 
+      if (!countryName) return `https://flagcdn.com/w320/pk.png`;
+      const country = availableCountries.find(c => c.name.toLowerCase() === countryName.toLowerCase() || c.code.toLowerCase() === countryName.toLowerCase());
+      const code = country ? country.code.toLowerCase() : 'pk';
       return `https://flagcdn.com/w320/${code}.png`;
   };
 
@@ -285,7 +281,7 @@ export default function Home() {
                   <UserPlus className="w-4 h-4 text-white" /> Join Donor
                 </Link>
                 <Link 
-                  to="/blood-donation" 
+                  to="/blood-donation?tab=appeal" 
                   className="geli-btn-sky rounded-xl text-center py-2.5 px-2 uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer text-xs"
                 >
                   <Clipboard className="w-4 h-4 text-white" /> Submit Appeal

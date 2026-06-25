@@ -8,4 +8,4 @@ env:
   - variable: FIREBASE_PROJECT_ID
     value: "jurisconnect-wwep2"
   - variable: FIRESTORE_DATABASE_ID
-    value: "ai-studio-58027f49-f4cb-4d2f-bb1b-006e0f11be95"
+    value: "(default)"

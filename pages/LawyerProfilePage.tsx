@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { getLawyerProfile, getLawyerReviews, addReview } from '../services/mockDataService';
+import { getLawyerProfile, getLawyerReviews, addReview, getCountries } from '../services/mockDataService';
 import { LawyerProfile, Review } from '../types';
 import { formatPhoneNumberForWhatsApp } from '../utils/phoneUtils';
 import { useAuth } from '../App';
@@ -287,17 +287,17 @@ export default function LawyerProfilePage() {
     }
   };
 
+  const [availableCountries, setAvailableCountries] = useState<import('../types').Country[]>([]);
+  useEffect(() => {
+      getCountries().then(setAvailableCountries);
+  }, []);
+
   if (loading) return <div className="p-20 text-center text-slate-500">Loading profile...</div>;
   if (!profile) return <div className="p-20 text-center text-slate-500">Lawyer not found.</div>;
 
   // Multi-country flag mappings
-  const countryFlagMap: Record<string, string> = {
-    'Pakistan': 'pk', 'United States': 'us', 'USA': 'us', 'United Kingdom': 'gb', 'UK': 'gb',
-    'Canada': 'ca', 'Australia': 'au', 'India': 'in', 'UAE': 'ae', 'Saudi Arabia': 'sa',
-    'Turkey': 'tr', 'Germany': 'de', 'France': 'fr', 'Malaysia': 'my', 'Singapore': 'sg',
-    'South Africa': 'za', 'Bangladesh': 'bd'
-  };
-  const flagCode = countryFlagMap[profile.country] || 'pk';
+  const matchedCountry = availableCountries.find(c => c.name.toLowerCase() === (profile.country || '').toLowerCase() || c.code.toLowerCase() === (profile.country || '').toLowerCase());
+  const flagCode = matchedCountry ? matchedCountry.code.toLowerCase() : 'pk';
   const flagUrl = `https://flagcdn.com/w320/${flagCode}.png`;
 
   // Construct WhatsApp Messages
@@ -366,42 +366,43 @@ export default function LawyerProfilePage() {
         </script>
       </Helmet>
       {/* Banner */}
-      <div className="h-48 bg-gradient-to-r from-blue-900 to-indigo-950 relative overflow-hidden">
+      <div className="h-36 sm:h-48 bg-gradient-to-r from-blue-900 to-indigo-950 relative overflow-hidden">
           <div className="absolute inset-0 opacity-15 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-          <div className="container mx-auto px-4 h-full flex items-end pb-4"></div>
+          <div className="container mx-auto px-4 pt-4 flex justify-between items-start relative z-20 max-w-6xl">
+              <Link to="/find-lawyers" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-bold backdrop-blur-sm transition-all border border-white/10">
+                  ← {isTranslated ? 'واپس جائیں' : 'Back to Search'}
+              </Link>
+
+              <button
+                  onClick={() => setIsTranslated(!isTranslated)}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-black transition-all shadow-md cursor-pointer border ${
+                      isTranslated 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500 shadow-blue-900/20' 
+                      : 'bg-white/95 hover:bg-white text-slate-850 border-white'
+                  }`}
+              >
+                  <span>🌐</span>
+                  <span className="hidden sm:inline">
+                      {isTranslated 
+                          ? `${getLocalLanguageInfo(profile.country).nativeName} / English` 
+                          : `${getLocalLanguageInfo(profile.country).nativeName} میں ترجمہ کریں`
+                      }
+                  </span>
+                  <span className="inline sm:hidden font-extrabold text-[10px]">
+                      {isTranslated ? 'EN' : getLocalLanguageInfo(profile.country).code.toUpperCase()}
+                  </span>
+              </button>
+          </div>
       </div>
 
-      <div className="container mx-auto px-4 -mt-16 relative z-10 max-w-6xl">
+      <div className="container mx-auto px-4 -mt-12 sm:-mt-16 relative z-10 max-w-6xl">
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-            {/* Translation and Localization Control Bar */}
-            <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 text-blue-800 text-lg p-2 rounded-full leading-none">🌐</div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Multi-Language Profile</p>
-                        <p className="text-sm font-semibold text-slate-700">
-                            Translate profile instantly to <span className="font-extrabold text-blue-600">{getLocalLanguageInfo(profile.country).lang} ({getLocalLanguageInfo(profile.country).nativeName})</span> without AI tools
-                        </p>
-                    </div>
-                </div>
-                <button
-                    onClick={() => setIsTranslated(!isTranslated)}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                        isTranslated 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200' 
-                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}
-                >
-                    {isTranslated ? '✓ Showing Local Language / مقامی زبان' : 'Translate Profile / ترجمہ کریں'}
-                </button>
-            </div>
-
             <div className="flex flex-col lg:flex-row">
                 
-                {/* 1. Sidebar Left: Picture and Communication Hub */}
-                <div className="w-full lg:w-80 bg-slate-50 p-6 text-center border-r border-slate-100 flex flex-col justify-between shrink-0">
+                {/* 1. Sidebar Left: Picture and Communication Hub (Desktop Only) */}
+                <div className="hidden lg:flex lg:flex-col lg:w-80 bg-slate-50 p-6 text-center lg:border-r border-slate-100 justify-between shrink-0">
                     <div>
-                      <div className="w-40 h-40 mx-auto bg-white p-1 rounded-full shadow-md mb-4 relative">
+                      <div className="w-40 h-40 mx-auto bg-white p-1 rounded-full shadow-md mb-4 relative animate-in fade-in zoom-in duration-300">
                           <img 
                               src={profile.picture || `https://ui-avatars.com/api/?name=${profile.fullName}&background=random&size=200`} 
                               alt={profile.fullName} 
@@ -470,8 +471,97 @@ export default function LawyerProfilePage() {
                 </div>
 
                 {/* 2. Content Area Right */}
-                <div className="flex-grow p-6 md:p-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
+                <div className="flex-grow p-5 sm:p-6 md:p-8">
+                    
+                    {/* Mobile-Only Header and Communication Section */}
+                    <div className="block lg:hidden mb-6 bg-slate-50/70 p-4 sm:p-5 rounded-2xl border border-slate-100/80">
+                        <div className="flex items-center gap-4">
+                            {/* Avatar */}
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white p-0.5 rounded-full shadow border border-slate-100 relative shrink-0">
+                                <img 
+                                    src={profile.picture || `https://ui-avatars.com/api/?name=${profile.fullName}&background=random&size=200`} 
+                                    alt={profile.fullName} 
+                                    className="w-full h-full rounded-full object-cover"
+                                />
+                                {profile.isVerified && (
+                                    <div className="absolute bottom-1 right-1 bg-blue-600 text-white p-1 rounded-full border-2 border-white shadow-sm" title="Verified Professional">
+                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Name and Meta */}
+                            <div className="flex-1 min-w-0">
+                                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 font-serif leading-tight">
+                                    {isTranslated && profile.fullNameLocal ? profile.fullNameLocal : profile.fullName}
+                                </h1>
+                                {profile.fullNameLocal && (
+                                    <p className="text-xs sm:text-sm font-semibold text-slate-500 mt-0.5" style={{ direction: 'auto' }}>
+                                        {isTranslated ? profile.fullName : profile.fullNameLocal}
+                                    </p>
+                                )}
+                                <p className="text-blue-600 font-bold text-xs sm:text-sm mt-1">
+                                    {isTranslated 
+                                        ? (titleTranslationMap[getLocalLanguageInfo(profile.country).code]?.[profile.title] || profile.title)
+                                        : profile.title
+                                    }
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-1.5 text-slate-500 text-[11px] sm:text-xs">
+                                    <img src={flagUrl} alt={`${profile.country} flag indicator`} className="w-4 h-auto rounded-sm border border-slate-200" />
+                                    <span className="font-semibold truncate">{profile.city}, {profile.country}</span>
+                                </div>
+                                <div className="inline-flex items-center bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 text-[10px] mt-2">
+                                    <span className="text-amber-500 mr-0.5">★</span>
+                                    <span className="font-bold text-slate-800">{profile.rating || '5.0'}</span>
+                                    <span className="text-slate-400 ml-1">({profile.reviewCount || 10})</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Mobile Actions (Direct Communication Hub) */}
+                        <div className="mt-4 pt-4 border-t border-slate-200/50">
+                            <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 text-center sm:text-left">
+                                {isTranslated ? 'براہ راست رابطہ سینٹر' : 'Direct Communication'}
+                            </h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                <a 
+                                    href={`tel:${profile.contactMobile}`}
+                                    className="h-10 bg-blue-50/80 hover:bg-blue-100 text-blue-700 font-bold rounded-xl transition text-[11px] flex items-center justify-center gap-1.5 border border-blue-100/30"
+                                >
+                                    📞 {isTranslated ? 'براہ راست کال' : 'Call'}
+                                </a>
+                                <a 
+                                    href={whatsappMsgLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={handleBookClick}
+                                    className="h-10 bg-green-50/80 hover:bg-green-100 text-green-700 font-bold rounded-xl transition text-[11px] flex items-center justify-center gap-1.5 border border-green-100/30"
+                                >
+                                    💬 {isTranslated ? 'واٹس ایپ چیٹ' : 'WhatsApp'}
+                                </a>
+                                <a 
+                                    href={`https://wa.me/${cleanPhone}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={handleWhatsappCallClick}
+                                    className="h-10 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl transition text-[11px] flex items-center justify-center gap-1.5 border border-emerald-100/30"
+                                >
+                                    📱 {isTranslated ? 'واٹس ایپ وائس' : 'WA Call'}
+                                </a>
+                                <button 
+                                    onClick={initInstantMeeting}
+                                    className="h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-black rounded-xl transition-all shadow-sm text-[10px] uppercase tracking-wider flex items-center justify-center gap-1"
+                                >
+                                    🤝 {isTranslated ? 'ویڈیو مشورہ' : 'Video Meet'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop-Only Header */}
+                    <div className="hidden lg:flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
                         <div>
                             <h1 className="text-3xl font-bold text-slate-900 font-serif mb-1">
                                 {isTranslated && profile.fullNameLocal ? profile.fullNameLocal : profile.fullName}
