@@ -6,8 +6,8 @@ import admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import fs from "fs";
 
-// High robust environment/production detection (compatible with both CommonJS and ESM)
-let isProduction = process.env.NODE_ENV === "production" || !process.argv[1]?.endsWith("server.ts");
+// High robust environment/production detection (ESM-native)
+let isProduction = import.meta.url.includes("/dist/") || import.meta.url.includes("\\dist\\") || process.env.NODE_ENV === "production";
 
 // Initialize Firebase Admin with high robustness and fallbacks
 let firebaseConfig: any = null;
