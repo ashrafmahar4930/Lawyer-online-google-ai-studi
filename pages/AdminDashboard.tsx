@@ -69,11 +69,17 @@ export default function AdminDashboard() {
       const lawyer = allLawyers.find(l => l.uid === review.lawyerId);
       return {
         ...review,
-        lawyerName: lawyer ? lawyer.fullName : 'Unknown Lawyer'
+        lawyerName: lawyer ? lawyer.fullName : 'Unknown Lawyer',
+        createdAt: review.createdAt || new Date().toISOString(),
+        rating: typeof review.rating === 'number' ? review.rating : 5
       };
     });
 
-    setReviews(enrichedReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    setReviews(enrichedReviews.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    }));
   };
 
   const fetchArticles = async () => {

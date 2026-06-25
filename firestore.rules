@@ -8,86 +8,131 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email.lower() == 'admin@jurisconnect.com' ||
-        request.auth.token.email.lower() == 'ashrafmahar4930@gmail.com'
-      );
+      return isSignedIn() && 
+        request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'admin@jurisconnect.com' ||
+          request.auth.token.email.lower() == 'ashrafmahar4930@gmail.com'
+        );
     }
     
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- COLLECTIONS ---
-    
+    // --- REVIEWS ---
+    match /reviews/{reviewId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.clientId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.clientId == request.auth.uid);
+    }
+
+    // --- USERS ---
     match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
     }
     
+    // --- LAWYERS ---
     match /lawyers/{lawyerId} {
       allow read: if true;
-      allow write: if isOwner(lawyerId) || isAdmin() || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount']));
+      allow create: if isSignedIn() && request.auth.uid == lawyerId;
+      allow update: if isAdmin();
+      allow update: if isSignedIn() && request.auth.uid == lawyerId;
+      allow update: if isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount']);
+      allow delete: if isAdmin();
     }
     
-    match /reviews/{reviewId} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
-    
+    // --- CASES ---
     match /cases/{caseId} {
-      allow read, write: if isAdmin() || (isSignedIn() && (
-        request.auth.uid == resource.data.lawyerId || 
-        request.auth.uid == request.resource.data.lawyerId
+      allow read: if isAdmin() || (isSignedIn() && (
+        resource.data.lawyerId == request.auth.uid || 
+        resource.data.clientId == request.auth.uid
       ));
+      allow create: if isAdmin() || (isSignedIn() && (
+        request.resource.data.lawyerId == request.auth.uid ||
+        request.resource.data.clientId == request.auth.uid
+      ));
+      allow update: if isAdmin() || (isSignedIn() && (
+        resource.data.lawyerId == request.auth.uid ||
+        request.resource.data.lawyerId == request.auth.uid
+      ));
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.lawyerId == request.auth.uid);
     }
     
+    // --- LEDGER ---
     match /ledger/{entryId} {
       allow read, write: if isSignedIn(); 
     }
     
+    // --- ARTICLES ---
     match /articles/{articleId} {
       allow read: if true;
       allow write: if isAdmin();
     }
     
+    // --- VERIFICATIONS ---
     match /verifications/{requestId} {
-      allow read, write: if isAdmin() || (isSignedIn() && (
-        request.auth.uid == resource.data.lawyerId ||
-        request.auth.uid == request.resource.data.lawyerId
+      allow read: if isAdmin() || (isSignedIn() && resource.data.lawyerId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.lawyerId == request.auth.uid;
+      allow update: if isAdmin() || (isSignedIn() && (
+        resource.data.lawyerId == request.auth.uid ||
+        request.resource.data.lawyerId == request.auth.uid
       ));
+      allow delete: if isAdmin();
     }
     
+    // --- BLOOD APPEALS ---
     match /blood_appeals/{appealId} {
-      allow read: if true;
+      allow get, list: if true;
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.requesterId == request.auth.uid);
     }
     
+    // --- BLOOD DONORS ---
     match /blood_donors/{donorId} {
       allow read: if true;
-      allow write: if isOwner(donorId) || isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == donorId;
+      allow update: if isAdmin() || (isSignedIn() && request.auth.uid == donorId);
+      allow delete: if isAdmin();
     }
     
+    // --- LEGAL QUESTIONS ---
     match /questions/{questionId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.clientId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.clientId == request.auth.uid;
+      allow update: if isAdmin() || (isSignedIn() && resource.data.clientId == request.auth.uid);
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.clientId == request.auth.uid);
     }
     
+    // --- LEGAL ANSWERS ---
     match /answers/{answerId} {
       allow read: if true;
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.lawyerId == request.auth.uid;
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.lawyerId == request.auth.uid);
     }
     
+    // --- NOTIFICATIONS ---
     match /notifications/{notificationId} {
-      allow read, write: if isAdmin() || (isSignedIn() && (
+      allow read: if isAdmin() || (isSignedIn() && (
         request.auth.uid == resource.data.userId || 
-        request.auth.uid == request.resource.data.userId ||
         resource.data.userId == 'lawyers' ||
         resource.data.userId == 'clients' ||
         resource.data.userId == 'all'
       ));
+      allow create: if isSignedIn() && (
+        request.resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == 'lawyers' ||
+        request.resource.data.userId == 'clients' ||
+        request.resource.data.userId == 'all' ||
+        isAdmin()
+      );
+      allow update: if isAdmin() || (isSignedIn() && (
+        request.auth.uid == resource.data.userId || 
+        request.auth.uid == request.resource.data.userId
+      ));
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
     match /{document=**} {

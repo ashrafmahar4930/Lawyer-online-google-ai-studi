@@ -2,7 +2,7 @@
 
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 // @ts-ignore
 import firebaseConfig from '../firebase-applet-config.json';
@@ -30,8 +30,10 @@ const app = !getApps().length ? initializeApp(effectiveConfig) : getApp();
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Force (default) database as requested by user
-export const db = getFirestore(app, '(default)');
+// Force default database with ignoreUndefinedProperties enabled to prevent crashes on undefined optional fields
+export const db = initializeFirestore(app, {
+  ignoreUndefinedProperties: true
+});
 
 console.log('✅ Firebase App initialized. Project:', effectiveConfig.projectId, 'Database: (default)');
 

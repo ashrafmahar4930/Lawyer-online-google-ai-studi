@@ -240,7 +240,7 @@ async function startServer() {
     const { messages } = req.body;
     try {
       const response = await getAi().models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: messages.map((m: any) => ({
           role: m.role === "user" ? "user" : "model",
           parts: [{ text: m.content }],
@@ -296,7 +296,7 @@ Description: "${description}"
 Category: "${category || 'General Practice'}"`;
 
       const response = await getAi().models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: prompt,
         config: {
           systemInstruction,
@@ -404,7 +404,7 @@ Category: "${category || 'General Practice'}"`;
     const { topic } = req.body;
     try {
       const response = await getAi().models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: `Write a professional legal article about: ${topic}. Format it with Markdown headers and paragraphs. Keep it under 500 words.`,
       });
       res.json({ text: response.text || "No content generated." });
@@ -418,7 +418,7 @@ Category: "${category || 'General Practice'}"`;
     const { docType, details } = req.body;
     try {
       const response = await getAi().models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: `Draft a legal document of type: "${docType}". 
         Here are the specific details: "${details}".
         
@@ -453,7 +453,7 @@ Category: "${category || 'General Practice'}"`;
       5. Keep it to approximately 100 to 150 words. Write a single cohesive, high-impact paragraph. Do not include placeholders, template brackets, formatting headers, or markdown wrappers.`;
 
       const response = await getAi().models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: prompt,
       });
 
@@ -487,7 +487,7 @@ Category: "${category || 'General Practice'}"`;
       }
 
       const response = await getAi().models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: prompt,
       });
 

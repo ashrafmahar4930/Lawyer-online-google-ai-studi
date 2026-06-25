@@ -202,7 +202,8 @@ export default function App() {
         let role = await getUserRole(firebaseUser.uid, true);
         
         // Admin check: using the requested admin email
-        if (firebaseUser.email?.toLowerCase() === 'admin@jurisconnect.com') {
+        const userEmailLower = firebaseUser.email?.toLowerCase();
+        if (userEmailLower === 'admin@jurisconnect.com' || userEmailLower === 'ashrafmahar4930@gmail.com') {
           role = 'admin';
           // Seed data if admin logs in and data is missing
           seedDataIfEmpty();
@@ -235,7 +236,8 @@ export default function App() {
       const firebaseUser = auth.currentUser;
       let role = await getUserRole(firebaseUser.uid, true);
       
-      if (firebaseUser.email?.toLowerCase() === 'admin@jurisconnect.com') {
+      const userEmailLower = firebaseUser.email?.toLowerCase();
+      if (userEmailLower === 'admin@jurisconnect.com' || userEmailLower === 'ashrafmahar4930@gmail.com') {
         role = 'admin';
       }
 

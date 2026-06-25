@@ -60,14 +60,14 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     return;
   }
   
-  logService.error(`Firestore ${operationType} Error on path: ${path}`, errInfo, 'Firestore');
-  
-  // Skill requirement: Throw JSON string for the agent to parse
-  const errorJson = JSON.stringify(errInfo);
   if (shouldThrow) {
+    logService.error(`Firestore ${operationType} Error on path: ${path}`, errInfo, 'Firestore');
+    const errorJson = JSON.stringify(errInfo);
     console.error('Firestore Error:', errorJson);
     throw new Error(errorJson);
   } else {
+    logService.warn(`Firestore ${operationType} Warning on path: ${path} (Handled gracefully with local/fallback cache)`, errInfo, 'Firestore');
+    const errorJson = JSON.stringify(errInfo);
     console.warn('Firestore Warning (Caught):', errorJson);
   }
 }

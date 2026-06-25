@@ -99,29 +99,29 @@ const mapToAppProfile = (data: any, uid: string): LawyerProfile => {
 
 const mapToDbProfile = (profile: LawyerProfile) => {
     return {
-        fullName: profile.fullName,
+        fullName: profile.fullName || '',
         fullNameLocal: profile.fullNameLocal || '',
-        name: profile.fullName, // Keep legacy field
+        name: profile.fullName || '', // Keep legacy field
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
         username: profile.username || '',
-        title: profile.title,
-        specialty: profile.specialty,
+        title: profile.title || 'Advocate',
+        specialty: profile.specialty || '',
         specialtyLocal: profile.specialtyLocal || '',
-        specialties: profile.specialties || [profile.specialty],
+        specialties: profile.specialties || (profile.specialty ? [profile.specialty] : []),
         services: profile.services || [],
         experience: profile.experience || '',
-        country: profile.country,
-        city: profile.city,
-        officeName: profile.officeName,
-        officeAddress: profile.officeAddress,
-        address: profile.officeAddress, // Keep legacy field
-        contactMobile: profile.contactMobile,
-        phone: profile.contactMobile, // Keep legacy field
-        contactWhatsapp: profile.contactWhatsapp,
-        whatsapp: profile.contactWhatsapp, // Keep legacy field
-        contactEmail: profile.contactEmail,
-        email: profile.contactEmail, // Keep legacy field
+        country: profile.country || '',
+        city: profile.city || '',
+        officeName: profile.officeName || '',
+        officeAddress: profile.officeAddress || '',
+        address: profile.officeAddress || '', // Keep legacy field
+        contactMobile: profile.contactMobile || '',
+        phone: profile.contactMobile || '', // Keep legacy field
+        contactWhatsapp: profile.contactWhatsapp || '',
+        whatsapp: profile.contactWhatsapp || '', // Keep legacy field
+        contactEmail: profile.contactEmail || '',
+        email: profile.contactEmail || '', // Keep legacy field
         socialMediaLink: profile.socialMediaLink || '',
         facebookUrl: profile.facebookUrl || '',
         linkedinUrl: profile.linkedinUrl || '',
@@ -130,17 +130,17 @@ const mapToDbProfile = (profile: LawyerProfile) => {
         education: profile.education || [],
         issuingAuthority: profile.issuingAuthority || '',
         licenseNumber: profile.licenseNumber || '',
-        aboutMe: profile.aboutMe,
+        aboutMe: profile.aboutMe || '',
         aboutMeLocal: profile.aboutMeLocal || '',
-        about: profile.aboutMe, // Keep legacy field
+        about: profile.aboutMe || '', // Keep legacy field
         achievements: profile.achievements || '',
-        isVerified: profile.isVerified,
+        isVerified: profile.isVerified || false,
         isSuspended: profile.isSuspended || false,
-        verificationStatus: profile.verificationStatus,
+        verificationStatus: profile.verificationStatus || 'none',
         rejectionReason: profile.rejectionReason || null,
         picture: profile.picture || null,
-        userId: profile.uid,
-        id: profile.uid, 
+        userId: profile.uid || '',
+        id: profile.uid || '', 
         updatedAt: new Date().toISOString(),
         enrollmentOrRollNumber: profile.enrollmentOrRollNumber || '',
         yearOfGraduation: profile.yearOfGraduation || '',
@@ -997,12 +997,24 @@ export const getActiveBloodAppeals = async (): Promise<BloodAppeal[]> => {
       const isExpired = createdAtTime > 0 && (now - createdAtTime > 24 * 60 * 60 * 1000);
       
       if (isExpired) {
-        // Automatically delete the expired appeal from Firestore to recycle database storage
-        try {
-          await deleteDoc(doc(db, 'blood_appeals', document.id));
-          console.log(`[getActiveBloodAppeals] Auto-deleted expired blood appeal: ${document.id}`);
-        } catch (e) {
-          console.error("Failed to delete expired blood appeal:", document.id, e);
+        // Only attempt deletion if authorized (requester or admin) to prevent throwing spurious permission errors in the browser console
+        const currentUserId = auth.currentUser?.uid;
+        const currentUserEmail = auth.currentUser?.email?.toLowerCase();
+        const isAuthorized = currentUserId && (
+          data.requesterId === currentUserId ||
+          currentUserEmail === 'admin@jurisconnect.com' ||
+          currentUserEmail === 'ashrafmahar4930@gmail.com'
+        );
+
+        if (isAuthorized) {
+          try {
+            await deleteDoc(doc(db, 'blood_appeals', document.id));
+            console.log(`[getActiveBloodAppeals] Auto-deleted expired blood appeal: ${document.id}`);
+          } catch (e) {
+            console.error("Failed to delete expired blood appeal:", document.id, e);
+          }
+        } else {
+          console.log(`[getActiveBloodAppeals] Skipping auto-deletion for expired appeal ${document.id} (not owner or admin)`);
         }
       } else if (data.status === 'active') {
         appeals.push(data as BloodAppeal);
@@ -1103,9 +1115,10 @@ export const getCitiesByCountry = async (countryName: string): Promise<string[]>
 // --- Review & Ratings System ---
 
 export const getLawyerReviews = async (lawyerId: string): Promise<Review[]> => {
+  if (!lawyerId) return [];
   const path = 'reviews';
   try {
-    const q = query(collection(db, path), where('lawyerId', '==', lawyerId));
+    const q = query(collection(db, path), where('lawyerId', '==', lawyerId), limit(50));
     const querySnapshot = await getDocs(q);
     const reviews: Review[] = [];
     querySnapshot.forEach((docSnap) => {
@@ -1140,10 +1153,13 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
     // Update lawyer profile
     currentPath = `lawyers/${lawyerId}`;
     const lawyerRef = doc(db, 'lawyers', lawyerId);
-    await updateDoc(lawyerRef, {
-      rating: avgRating,
-      reviewCount: count
-    });
+    const lawyerSnap = await getDoc(lawyerRef);
+    if (lawyerSnap.exists()) {
+      await updateDoc(lawyerRef, {
+        rating: avgRating,
+        reviewCount: count
+      });
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, currentPath);
     throw error;
@@ -1153,7 +1169,8 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
 export const getAllReviews = async (): Promise<Review[]> => {
   const path = 'reviews';
   try {
-    const querySnapshot = await getDocs(collection(db, path));
+    const q = query(collection(db, path), limit(100));
+    const querySnapshot = await getDocs(q);
     const reviews: Review[] = [];
     querySnapshot.forEach((doc) => {
       reviews.push(doc.data() as Review);
