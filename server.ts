@@ -5,14 +5,20 @@ import { GoogleGenAI, Type } from "@google/genai";
 import admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import fs from "fs";
+import { fileURLToPath } from "url";
 
 // High robust environment/production detection (ESM-native)
 let isProduction = import.meta.url.includes("/dist/") || import.meta.url.includes("\\dist\\") || process.env.NODE_ENV === "production";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Initialize Firebase Admin with high robustness and fallbacks
 let firebaseConfig: any = null;
 try {
-  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  const configPath = __dirname.endsWith('dist') || __dirname.endsWith('dist/') || __dirname.endsWith('dist\\')
+    ? path.join(__dirname, "../firebase-applet-config.json")
+    : path.join(__dirname, "firebase-applet-config.json");
   if (fs.existsSync(configPath)) {
     firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
   } else {
@@ -210,7 +216,9 @@ async function seedDatabase() {
 
 async function startServer() {
   const app = express();
-  const distPath = path.join(process.cwd(), 'dist');
+  const distPath = __dirname.endsWith('dist') || __dirname.endsWith('dist/') || __dirname.endsWith('dist\\')
+    ? __dirname
+    : path.join(__dirname, 'dist');
   // Safe port binding: In development/AI Studio preview, we must strictly bind to port 3000.
   // In production (Cloud Run / App Hosting), we honor process.env.PORT.
   const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -519,7 +527,11 @@ Category: "${category || 'General Practice'}"`;
   if (isProduction || !viteLoaded) {
     app.use(express.static(distPath));
     // Correct catch-all pattern compatible with Express 5 / path-to-regexp 8.x
+    // Avoid sending index.html for static asset or API requests that fail (preventing "unexpected token <" client-side error)
     app.get('*all', (req, res) => {
+      if (req.path.startsWith('/api') || req.path.includes('.') || req.path.startsWith('/assets')) {
+        return res.status(404).send('Not Found');
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
     console.log("Serving static production assets from:", distPath);
