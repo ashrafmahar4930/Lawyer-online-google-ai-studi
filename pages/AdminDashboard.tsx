@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { VerificationRequest, Article, LawyerProfile, BloodAppeal, BloodDonor } from '../types';
 import * as db from '../services/mockDataService';
 import { generateArticle } from '../services/geminiService';
@@ -10,6 +11,56 @@ import { ClipboardCheck, Users as UsersIcon, FileText, Droplet, LayoutDashboard,
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'verifications' | 'articles' | 'users' | 'blood' | 'branding' | 'monetization' | 'reviews'>('verifications');
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: (inputValue?: string) => Promise<void> | void;
+    showInput?: boolean;
+    inputPlaceholder?: string;
+    inputValue?: string;
+    isDestructive?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: async () => {},
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => prev.message === message ? { ...prev, show: false } : prev);
+    }, 4000);
+  };
+
+  const showConfirm = (options: {
+    title: string;
+    message: string;
+    onConfirm: (inputValue?: string) => Promise<void> | void;
+    showInput?: boolean;
+    inputPlaceholder?: string;
+    inputValue?: string;
+    isDestructive?: boolean;
+  }) => {
+    setConfirmModal({
+      isOpen: true,
+      title: options.title,
+      message: options.message,
+      onConfirm: options.onConfirm,
+      showInput: options.showInput || false,
+      inputPlaceholder: options.inputPlaceholder || '',
+      inputValue: options.inputValue || '',
+      isDestructive: options.isDestructive || false,
+    });
+  };
+
   const [requests, setRequests] = useState<VerificationRequest[]>([]);
   const [lawyers, setLawyers] = useState<LawyerProfile[]>([]);
   const [appeals, setAppeals] = useState<BloodAppeal[]>([]);
@@ -89,84 +140,107 @@ export default function AdminDashboard() {
     setIsLoadingArticles(false);
   };
 
-  const handleSeedDatabase = async () => {
-    if (!window.confirm("Do you want to directly upload default global lawyer profiles and expert legal article seed data into the live Firestore Database?")) {
-        return;
-    }
-    setIsSeeding(true);
-    try {
-        // Feed lawyers
-        for (const lawyer of db.fallbackLawyers) {
-            await db.updateLawyerProfile(lawyer);
+  const handleSeedDatabase = () => {
+    showConfirm({
+      title: "Seed Database",
+      message: "Do you want to directly upload default global lawyer profiles and expert legal article seed data into the live Firestore Database?",
+      onConfirm: async () => {
+        setIsSeeding(true);
+        try {
+            for (const lawyer of db.fallbackLawyers) {
+                await db.updateLawyerProfile(lawyer);
+            }
+            for (const article of db.fallbackArticles) {
+                await db.addArticle(article);
+            }
+            showToast("Firestore Database successfully seed ho chuka hai! Ab aapko standard dashboard screens aur home/articles page par real dynamic data nazar aaye ga.", "success");
+            await refreshData();
+            await fetchArticles();
+        } catch (error) {
+            console.error("Client side seeding failed:", error);
+            showToast("Database seeding failed. Please check your network connectivity.", "error");
+        } finally {
+            setIsSeeding(false);
         }
-        // Feed articles
-        for (const article of db.fallbackArticles) {
-            await db.addArticle(article);
-        }
-        alert("Firestore Database successfully seed ho chuka hai! Ab aapko standard dashboard screens aur home/articles page par real dynamic data nazar aaye ga.");
-        await refreshData();
-        await fetchArticles();
-    } catch (error) {
-        console.error("Client side seeding failed:", error);
-        alert("Database seeding failed. Please check your network connectivity.");
-    } finally {
-        setIsSeeding(false);
-    }
+      }
+    });
   };
 
   const handleVerify = async (id: string, approve: boolean) => {
     if (approve) {
-        alert("Verification approved successfully!");
+        showToast("Verification approved successfully!", "success");
         await db.processVerification(id, 'approved');
+        refreshData();
     } else {
-        const reason = prompt("Verify application rejected? Enter reason:");
-        if (reason) {
-            alert("Verification rejected successfully. Reason sent to lawyer.");
-            await db.processVerification(id, 'rejected', reason);
-        }
-        else {
-            alert("Rejection cancelled: No reason provided.");
-            return;
-        }
+        showConfirm({
+            title: "Reject Verification Request",
+            message: "Verify application rejected? Enter reason:",
+            showInput: true,
+            inputPlaceholder: "Enter rejection reason...",
+            onConfirm: async (reason) => {
+                if (reason && reason.trim()) {
+                    showToast("Verification rejected successfully. Reason sent to lawyer.", "success");
+                    await db.processVerification(id, 'rejected', reason);
+                    refreshData();
+                } else {
+                    showToast("Rejection cancelled: No reason provided.", "info");
+                }
+            }
+        });
     }
-    refreshData();
   };
 
-  const handleDeleteUser = async (uid: string) => {
-      if(window.confirm("Are you sure you want to permanently delete this user profile and all associated data (including storage files)? This cannot be undone.")) {
-          try {
-              await db.deleteLawyerProfile(uid); // This now handles deleting files too
-              alert("User profile deleted successfully.");
-              refreshData();
-          } catch (error) {
-              console.error("Error deleting lawyer:", error);
-              alert("Failed to delete user profile. Check console for details.");
+  const handleDeleteUser = (uid: string) => {
+      showConfirm({
+          title: "Permanently Delete Profile",
+          message: "Are you sure you want to permanently delete this user profile and all associated data (including storage files)? This cannot be undone.",
+          isDestructive: true,
+          onConfirm: async () => {
+              try {
+                  await db.deleteLawyerProfile(uid);
+                  showToast("User profile deleted successfully.", "success");
+                  refreshData();
+              } catch (error) {
+                  console.error("Error deleting lawyer:", error);
+                  showToast("Failed to delete user profile. Check console for details.", "error");
+              }
           }
-      }
+      });
   };
 
-  const handleToggleSuspend = async (uid: string, isCurrentlySuspended: boolean) => {
-      if(window.confirm(`Are you sure you want to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} this user?`)) {
-          try {
-              await db.setLawyerSuspended(uid, !isCurrentlySuspended);
-              refreshData();
-          } catch (error) {
-              console.error("Error toggling suspension:", error);
-              alert("Failed to update suspension status.");
+  const handleToggleSuspend = (uid: string, isCurrentlySuspended: boolean) => {
+      showConfirm({
+          title: isCurrentlySuspended ? "Unsuspend Account" : "Suspend Account",
+          message: `Are you sure you want to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} this user?`,
+          isDestructive: !isCurrentlySuspended,
+          onConfirm: async () => {
+              try {
+                  await db.setLawyerSuspended(uid, !isCurrentlySuspended);
+                  showToast(`User successfully ${isCurrentlySuspended ? 'unsuspended' : 'suspended'}.`, "success");
+                  refreshData();
+              } catch (error) {
+                  console.error("Error toggling suspension:", error);
+                  showToast("Failed to update suspension status.", "error");
+              }
           }
-      }
+      });
   };
 
-  const handleToggleVerify = async (uid: string, isCurrentlyVerified: boolean) => {
-      if(window.confirm(`Are you sure you want to manually ${isCurrentlyVerified ? 'unverify' : 'verify'} this user?`)) {
-          try {
-              await db.setLawyerVerified(uid, !isCurrentlyVerified);
-              refreshData();
-          } catch (error) {
-              console.error("Error toggling verification:", error);
-              alert("Failed to update verification status.");
+  const handleToggleVerify = (uid: string, isCurrentlyVerified: boolean) => {
+      showConfirm({
+          title: isCurrentlyVerified ? "Unverify Account" : "Verify Account",
+          message: `Are you sure you want to manually ${isCurrentlyVerified ? 'unverify' : 'verify'} this user?`,
+          onConfirm: async () => {
+              try {
+                  await db.setLawyerVerified(uid, !isCurrentlyVerified);
+                  showToast(`User successfully ${isCurrentlyVerified ? 'unverified' : 'verified'}.`, "success");
+                  refreshData();
+              } catch (error) {
+                  console.error("Error toggling verification:", error);
+                  showToast("Failed to update verification status.", "error");
+              }
           }
-      }
+      });
   };
 
   const handleGenerateArticle = async () => {
@@ -194,7 +268,7 @@ export default function AdminDashboard() {
               const url = await db.uploadFile(compressedFile, path, oldImageUrl);
               setArticleImage(url);
           } catch (e) {
-              alert("Image upload failed");
+              showToast("Image upload failed", "error");
               console.error(e);
           } finally {
               setUploadingImage(false);
@@ -205,7 +279,7 @@ export default function AdminDashboard() {
 
   const handlePublishArticle = async () => {
       if (!articleTopic || !articleContent) {
-          alert("Article title and content are required.");
+          showToast("Article title and content are required.", "error");
           return;
       }
       
@@ -223,10 +297,10 @@ export default function AdminDashboard() {
       try {
           if (editingArticleId) {
               await db.updateArticle(articleData);
-              alert("Article Updated!");
+              showToast("Article Updated!", "success");
           } else {
               await db.addArticle(articleData);
-              alert("Article Published!");
+              showToast("Article Published!", "success");
           }
           
           setArticleTopic('');
@@ -238,7 +312,7 @@ export default function AdminDashboard() {
           fetchArticles(); // Refresh article list
       } catch (error) {
           console.error("Failed to publish/update article:", error);
-          alert("Failed to publish/update article.");
+          showToast("Failed to publish/update article.", "error");
       }
   };
 
@@ -252,17 +326,22 @@ export default function AdminDashboard() {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
   };
 
-  const handleDeleteArticle = async (articleId: string) => {
-    if (window.confirm("Are you sure you want to permanently delete this article and its image?")) {
-      try {
-        await db.deleteArticle(articleId);
-        alert("Article deleted successfully!");
-        fetchArticles(); // Refresh article list
-      } catch (error) {
-        console.error("Failed to delete article:", error);
-        alert("Failed to delete article.");
+  const handleDeleteArticle = (articleId: string) => {
+    showConfirm({
+      title: "Delete Article",
+      message: "Are you sure you want to permanently delete this article and its image?",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await db.deleteArticle(articleId);
+          showToast("Article deleted successfully!", "success");
+          fetchArticles(); // Refresh article list
+        } catch (error) {
+          console.error("Failed to delete article:", error);
+          showToast("Failed to delete article.", "error");
+        }
       }
-    }
+    });
   };
 
   const handleCancelEdit = () => {
@@ -280,21 +359,26 @@ export default function AdminDashboard() {
       setMatchingDonors(donors);
   };
 
-  const handleDeleteAppeal = async (appealId: string) => {
-      if(window.confirm("Are you sure you want to delete this appeal permanently?")) {
-          try {
-              await db.deleteBloodAppeal(appealId);
-              alert("Appeal deleted successfully.");
-              if (selectedAppeal?.id === appealId) {
-                  setSelectedAppeal(null);
-                  setMatchingDonors([]);
+  const handleDeleteAppeal = (appealId: string) => {
+      showConfirm({
+          title: "Delete Blood Appeal",
+          message: "Are you sure you want to delete this appeal permanently?",
+          isDestructive: true,
+          onConfirm: async () => {
+              try {
+                  await db.deleteBloodAppeal(appealId);
+                  showToast("Appeal deleted successfully.", "success");
+                  if (selectedAppeal?.id === appealId) {
+                      setSelectedAppeal(null);
+                      setMatchingDonors([]);
+                  }
+                  refreshData();
+              } catch (error) {
+                  console.error("Error deleting appeal:", error);
+                  showToast("Failed to delete appeal.", "error");
               }
-              refreshData();
-          } catch (error) {
-              console.error("Error deleting appeal:", error);
-              alert("Failed to delete appeal.");
           }
-      }
+      });
   };
 
 
@@ -394,9 +478,7 @@ export default function AdminDashboard() {
                                   </div>
                                   <button 
                                     onClick={async () => {
-                                        if(window.confirm("Delete this review?")) {
-                                            alert("Review moderation feature active. Currently you can view and identify suspicious ratings here.");
-                                        }
+                                        showConfirm({ title: "Moderate Review", message: "Are you sure you want to delete this review?", isDestructive: true, onConfirm: () => showToast("Review moderation feature active. Currently you can view and identify suspicious ratings here.", "info") });
                                     }}
                                     className="text-red-500 hover:bg-red-50 p-2 rounded-xl transition"
                                   >
@@ -965,6 +1047,100 @@ export default function AdminDashboard() {
          </div>
       </div>
       </main>
+
+       {/* Custom Toast Notification */}
+       <AnimatePresence>
+         {toast.show && (
+           <motion.div 
+             initial={{ opacity: 0, y: 50 }}
+             animate={{ opacity: 1, y: 0 }}
+             exit={{ opacity: 0, y: 20 }}
+             className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border border-slate-100 bg-white max-w-sm"
+           >
+             {toast.type === 'success' && (
+               <div className="w-8 h-8 bg-green-100 text-green-600 rounded-xl flex items-center justify-center font-bold">✓</div>
+             )}
+             {toast.type === 'error' && (
+               <div className="w-8 h-8 bg-red-100 text-red-600 rounded-xl flex items-center justify-center font-bold">✗</div>
+             )}
+             {toast.type === 'info' && (
+               <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold">i</div>
+             )}
+             <div className="flex-1 min-w-0">
+               <p className="text-xs font-black text-slate-800 leading-snug">{toast.message}</p>
+             </div>
+             <button 
+               onClick={() => setToast(prev => ({ ...prev, show: false }))} 
+               className="text-slate-400 hover:text-slate-600 font-bold text-xs ml-auto pl-2"
+             >
+               ✕
+             </button>
+           </motion.div>
+         )}
+       </AnimatePresence>
+
+       {/* Custom Confirmation Modal */}
+       <AnimatePresence>
+         {confirmModal.isOpen && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-sm">
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               exit={{ opacity: 0, scale: 0.95 }}
+               transition={{ duration: 0.15 }}
+               className="bg-white rounded-[2.5rem] border border-slate-150 shadow-2xl max-w-md w-full p-8 flex flex-col gap-6"
+             >
+               <div>
+                 <h3 className="text-xl font-black text-slate-900 mb-2">{confirmModal.title}</h3>
+                 <p className="text-slate-500 font-medium text-xs leading-relaxed">{confirmModal.message}</p>
+               </div>
+
+               {confirmModal.showInput && (
+                 <input 
+                   type="text"
+                   placeholder={confirmModal.inputPlaceholder || "Enter details..."}
+                   defaultValue={confirmModal.inputValue}
+                   id="modal-prompt-input"
+                   className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-slate-850 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+                   autoFocus
+                   onKeyDown={async (e) => {
+                     if (e.key === 'Enter') {
+                       const val = e.currentTarget.value;
+                       setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                       await confirmModal.onConfirm(val);
+                     }
+                   }}
+                 />
+               )}
+
+               <div className="flex gap-3 justify-end">
+                 <button 
+                   onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                   className="px-5 py-3 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl font-black text-[11px] uppercase tracking-wider transition"
+                 >
+                   Cancel
+                 </button>
+                 <button 
+                   onClick={async () => {
+                     let val = undefined;
+                     if (confirmModal.showInput) {
+                       const inputEl = document.getElementById('modal-prompt-input') as HTMLInputElement | null;
+                       val = inputEl?.value || '';
+                     }
+                     setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                     await confirmModal.onConfirm(val);
+                   }}
+                   className={`px-5 py-3 rounded-xl font-black text-[11px] uppercase tracking-wider text-white transition ${
+                     confirmModal.isDestructive ? 'bg-red-600 hover:bg-red-750 shadow-lg shadow-red-200' : 'bg-blue-600 hover:bg-blue-750 shadow-lg shadow-blue-200'
+                   }`}
+                 >
+                   Confirm
+                 </button>
+               </div>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
     </div>
   );
 }
