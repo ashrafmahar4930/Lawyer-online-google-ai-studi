@@ -216,14 +216,40 @@ async function seedDatabase() {
 
 async function startServer() {
   const app = express();
-  const distPath = __dirname.endsWith('dist') || __dirname.endsWith('dist/') || __dirname.endsWith('dist\\')
-    ? __dirname
-    : path.join(__dirname, 'dist');
+  const distPath = fs.existsSync(path.join(process.cwd(), 'dist'))
+    ? path.join(process.cwd(), 'dist')
+    : (__dirname.endsWith('dist') || __dirname.endsWith('dist/') || __dirname.endsWith('dist\\') ? __dirname : path.join(__dirname, 'dist'));
   // Safe port binding: In development/AI Studio preview, we must strictly bind to port 3000.
   // In production (Cloud Run / App Hosting), we honor process.env.PORT.
   const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   app.use(express.json());
+
+  app.get("/api/debug-paths", (req, res) => {
+    try {
+      const exists = fs.existsSync(distPath);
+      let files: string[] = [];
+      if (exists) {
+        files = fs.readdirSync(distPath);
+      }
+      res.json({
+        __dirname,
+        cwd: process.cwd(),
+        distPath,
+        exists,
+        files,
+        isProduction,
+        importMetaUrl: import.meta.url,
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT,
+          FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID
+        }
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message, stack: err.stack });
+    }
+  });
 
   // Gemini Setup (lazy initialized to prevent startup crashes if key is missing)
   let _ai: any = null;
