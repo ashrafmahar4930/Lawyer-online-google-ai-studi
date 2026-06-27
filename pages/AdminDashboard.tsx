@@ -69,6 +69,20 @@ export default function AdminDashboard() {
   const [matchingDonors, setMatchingDonors] = useState<BloodDonor[]>([]);
   const [selectedCountryFilter, setSelectedCountryFilter] = useState<string>('All');
 
+  // Blood Donor Registry & Advanced Filters States
+  const [allDonors, setAllDonors] = useState<BloodDonor[]>([]);
+  const [bloodTabMode, setBloodTabMode] = useState<'appeals' | 'donors'>('appeals');
+  const [donorSearch, setDonorSearch] = useState('');
+  const [donorGroupFilter, setDonorGroupFilter] = useState('All');
+  const [donorCountryFilter, setDonorCountryFilter] = useState('All');
+  const [donorCityFilter, setDonorCityFilter] = useState('All');
+
+  // Message Sending states
+  const [isSendMessageOpen, setIsSendMessageOpen] = useState(false);
+  const [selectedDonorForMessage, setSelectedDonorForMessage] = useState<BloodDonor | null>(null);
+  const [messageBody, setMessageBody] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+
   // Branding Control States (Managing Logo & Allowed Domains)
   const [logoText, setLogoText] = useState('LAWYERONLINE.LIVE');
   const [allowedDomains, setAllowedDomains] = useState('lawyeronline.live, lawyeronline.pk, build-ais-dev.run.app');
@@ -104,16 +118,18 @@ export default function AdminDashboard() {
   }, []);
 
   const refreshData = async () => {
-    const [pendingReqs, allLawyers, activeAppeals, allReviewsData] = await Promise.all([
+    const [pendingReqs, allLawyers, activeAppeals, allReviewsData, registeredDonors] = await Promise.all([
       db.getPendingVerifications(),
       db.getAllLawyers(),
       db.getActiveBloodAppeals(),
-      db.getAllReviews()
+      db.getAllReviews(),
+      db.getAllBloodDonors()
     ]);
 
     setRequests(pendingReqs);
     setLawyers(allLawyers);
     setAppeals(activeAppeals);
+    setAllDonors(registeredDonors);
     
     // Enrich reviews with lawyer names
     const enrichedReviews = allReviewsData.map(review => {
@@ -381,6 +397,48 @@ export default function AdminDashboard() {
       });
   };
 
+  const handleDeleteDonor = (donorId: string) => {
+      showConfirm({
+          title: "Delete Blood Donor",
+          message: "Are you sure you want to delete this donor registration permanently?",
+          isDestructive: true,
+          onConfirm: async () => {
+              try {
+                  await db.deleteBloodDonor(donorId);
+                  showToast("Donor deleted successfully.", "success");
+                  refreshData();
+              } catch (error) {
+                  console.error("Error deleting donor:", error);
+                  showToast("Failed to delete donor.", "error");
+              }
+          }
+      });
+  };
+
+  const handleSendMessageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDonorForMessage || !messageBody.trim()) return;
+    setIsSendingMessage(true);
+    try {
+      await db.sendBloodDonorMessage(
+        selectedDonorForMessage.id,
+        selectedDonorForMessage.name,
+        messageBody,
+        'Admin'
+      );
+      showToast(`System alert message logged successfully for ${selectedDonorForMessage.name}!`, "success");
+      setIsSendMessageOpen(false);
+      setMessageBody('');
+      setSelectedDonorForMessage(null);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      showToast("Failed to send message.", "error");
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
+
 
   // Stats
   const totalVerified = lawyers.filter(l => l.isVerified).length;
@@ -642,118 +700,304 @@ export default function AdminDashboard() {
          )}
 
               {activeTab === 'blood' && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                      <div>
-                          <h2 className="text-2xl font-black mb-6 text-red-600 tracking-tight">Active Appeals</h2>
-                          <div className="space-y-4">
-                              {appeals.map(appeal => (
-                                  <div 
-                                    key={appeal.id} 
-                                    className={`p-6 rounded-[2rem] border-2 transition flex flex-col gap-4 ${selectedAppeal?.id === appeal.id ? 'border-red-600 bg-red-50 shadow-2xl' : 'border-slate-50 hover:border-red-100 bg-white shadow-lg shadow-slate-100'}`}
-                                  >
-                                      <div className="flex items-center gap-6">
-                                          <div className="w-16 h-16 bg-red-600 text-white rounded-3xl flex items-center justify-center font-black text-2xl shadow-xl shadow-red-200 shrink-0">
-                                              {appeal.bloodGroup}
-                                          </div>
-                                          <div>
-                                              <h3 className="font-black text-xl text-slate-900">{appeal.patientName}</h3>
-                                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{appeal.hospital}, {appeal.city}</p>
-                                          </div>
-                                      </div>
-                                      <div className="flex gap-2 mt-2">
-                                          <button 
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteAppeal(appeal.id); }} 
-                                            className="px-4 py-2 border border-red-200 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-50 transition w-full"
-                                          >
-                                              Delete
-                                          </button>
-                                          <button 
-                                            onClick={(e) => { e.stopPropagation(); handleSelectAppeal(appeal); }} 
-                                            className="px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition w-full shadow-lg"
-                                          >
-                                              Link to Donors
-                                          </button>
-                                      </div>
-                                  </div>
-                              ))}
-                              {appeals.length === 0 && (
-                                <div className="text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
-                                    <p className="text-slate-400 font-black tracking-widest uppercase text-xs">No active global appeals</p>
-                                </div>
-                              )}
-                          </div>
+                  <div className="space-y-8 animate-in fade-in duration-300">
+                      {/* Dual Mode Sub-tab Navigation */}
+                      <div className="flex bg-slate-150 p-1.5 rounded-[1.5rem] max-w-md border border-slate-200">
+                          <button 
+                              onClick={() => setBloodTabMode('appeals')} 
+                              className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${bloodTabMode === 'appeals' ? 'bg-white text-red-650 shadow' : 'text-slate-500 hover:text-slate-800'}`}
+                          >
+                              Emergency Appeals & Ads
+                          </button>
+                          <button 
+                              onClick={() => setBloodTabMode('donors')} 
+                              className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${bloodTabMode === 'donors' ? 'bg-white text-red-650 shadow' : 'text-slate-500 hover:text-slate-800'}`}
+                          >
+                              Voluntary Donor Registry
+                          </button>
                       </div>
 
-                      <div className="lg:border-l lg:pl-12 border-slate-100">
-                          <h2 className="text-2xl font-black mb-6 tracking-tight text-slate-900">Coordination Desk</h2>
-                          {selectedAppeal ? (
-                              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                                  <div className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden ring-4 ring-offset-4 ring-red-600/20">
-                                      <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                                      <span className="bg-red-600 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest mb-4 inline-block relative z-10 shadow-lg">Mission Critical</span>
-                                      <h3 className="text-2xl font-black mb-2 relative z-10">{selectedAppeal.bloodGroup} Required for {selectedAppeal.patientName}</h3>
-                                      <p className="text-sm text-slate-400 font-medium leading-relaxed relative z-10 mb-6">Patient is currently admitted at {selectedAppeal.hospital}. Our system has identified nearby voluntary donors.</p>
-                                      <div className="grid grid-cols-2 gap-4 relative z-10">
-                                          <div className="bg-white/5 p-4 rounded-3xl border border-white/5 backdrop-blur-sm">
-                                              <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Target Cluster</p>
-                                              <p className="text-sm font-bold text-white">{selectedAppeal.city}, {selectedAppeal.country}</p>
+                      {bloodTabMode === 'appeals' ? (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                              <div>
+                                  <div className="flex items-center justify-between mb-6">
+                                      <h2 className="text-2xl font-black text-red-600 tracking-tight">Active Appeals (Live Ads)</h2>
+                                      <span className="bg-red-100 text-red-700 text-[10px] font-black uppercase px-3 py-1 rounded-full">{appeals.length} active</span>
+                                  </div>
+                                  <div className="space-y-4">
+                                      {appeals.map(appeal => (
+                                          <div 
+                                            key={appeal.id} 
+                                            className={`p-6 rounded-[2rem] border-2 transition flex flex-col gap-4 ${selectedAppeal?.id === appeal.id ? 'border-red-600 bg-red-50 shadow-2xl' : 'border-slate-50 hover:border-red-100 bg-white shadow-lg shadow-slate-100'}`}
+                                          >
+                                              <div className="flex items-center gap-6">
+                                                  <div className="w-16 h-16 bg-red-600 text-white rounded-3xl flex items-center justify-center font-black text-2xl shadow-xl shadow-red-200 shrink-0">
+                                                      {appeal.bloodGroup}
+                                                  </div>
+                                                  <div>
+                                                      <h3 className="font-black text-xl text-slate-900">{appeal.patientName}</h3>
+                                                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{appeal.hospital}, {appeal.city}</p>
+                                                  </div>
+                                              </div>
+                                              <div className="flex gap-2 mt-2">
+                                                  <button 
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteAppeal(appeal.id); }} 
+                                                    className="px-4 py-2 border border-red-200 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-50 transition w-full"
+                                                  >
+                                                      Delete
+                                                  </button>
+                                                  <button 
+                                                    onClick={(e) => { e.stopPropagation(); handleSelectAppeal(appeal); }} 
+                                                    className="px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition w-full shadow-lg"
+                                                  >
+                                                      Link to Donors
+                                                  </button>
+                                              </div>
                                           </div>
-                                          <div className="bg-white/5 p-4 rounded-3xl border border-white/5 backdrop-blur-sm">
-                                              <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Impact Score</p>
-                                              <p className="text-sm font-bold text-white">Critical Case</p>
+                                      ))}
+                                      {appeals.length === 0 && (
+                                        <div className="text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+                                            <p className="text-slate-400 font-black tracking-widest uppercase text-xs">No active global appeals</p>
+                                        </div>
+                                      )}
+                                  </div>
+                              </div>
+
+                              <div className="lg:border-l lg:pl-12 border-slate-100">
+                                  <h2 className="text-2xl font-black mb-6 tracking-tight text-slate-900">Coordination Desk</h2>
+                                  {selectedAppeal ? (
+                                      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                                          <div className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden ring-4 ring-offset-4 ring-red-600/20">
+                                              <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                                              <span className="bg-red-600 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest mb-4 inline-block relative z-10 shadow-lg">Mission Critical</span>
+                                              <h3 className="text-2xl font-black mb-2 relative z-10">{selectedAppeal.bloodGroup} Required for {selectedAppeal.patientName}</h3>
+                                              <p className="text-sm text-slate-400 font-medium leading-relaxed relative z-10 mb-6">Patient is currently admitted at {selectedAppeal.hospital}. Our system has identified nearby voluntary donors.</p>
+                                              <div className="grid grid-cols-2 gap-4 relative z-10">
+                                                  <div className="bg-white/5 p-4 rounded-3xl border border-white/5 backdrop-blur-sm">
+                                                      <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Target Cluster</p>
+                                                      <p className="text-sm font-bold text-white">{selectedAppeal.city}, {selectedAppeal.country}</p>
+                                                  </div>
+                                                  <div className="bg-white/5 p-4 rounded-3xl border border-white/5 backdrop-blur-sm">
+                                                      <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Impact Score</p>
+                                                      <p className="text-sm font-bold text-white">Critical Case</p>
+                                                  </div>
+                                              </div>
+                                          </div>
+
+                                          <div className="space-y-4">
+                                              <div className="flex items-center justify-between px-2">
+                                                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Validated Matches ({matchingDonors.length})</h4>
+                                              </div>
+                                              <div className="space-y-3">
+                                                  {matchingDonors.map(donor => (
+                                                      <div key={donor.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex items-center justify-between group hover:border-green-300 hover:shadow-2xl hover:shadow-green-50 transition-all duration-300">
+                                                          <div className="flex items-center gap-4">
+                                                              <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center font-black group-hover:bg-green-50 group-hover:text-green-500 transition-colors">
+                                                                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                                              </div>
+                                                              <div>
+                                                                  <h4 className="font-black text-slate-900 leading-tight">{donor.name}</h4>
+                                                                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{donor.city} • Verified Donor</p>
+                                                              </div>
+                                                          </div>
+                                                          <div className="flex items-center gap-2">
+                                                              <button 
+                                                                onClick={() => {
+                                                                  setSelectedDonorForMessage(donor);
+                                                                  setMessageBody(`Salam ${donor.name}, We have an urgent blood appeal for ${selectedAppeal.bloodGroup} at ${selectedAppeal.hospital}, ${selectedAppeal.city}. Please help. Contact: ${selectedAppeal.mobile}`);
+                                                                  setIsSendMessageOpen(true);
+                                                                }}
+                                                                className="p-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition"
+                                                                title="Send Message"
+                                                              >
+                                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                                              </button>
+                                                              <a 
+                                                                href={`https://wa.me/${formatPhoneNumberForWhatsApp(donor.whatsapp, donor.country)}?text=${encodeURIComponent(`Salam, Urgent blood required! Patient: ${selectedAppeal.patientName} (${selectedAppeal.bloodGroup}) at ${selectedAppeal.hospital}, ${selectedAppeal.city}. Please help. Contact: ${selectedAppeal.mobile}`)}`}
+                                                                target="_blank" 
+                                                                rel="noreferrer"
+                                                                className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition shadow-xl shadow-green-100 active:scale-90 flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest"
+                                                              >
+                                                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.892.527 3.661 1.442 5.174L2 22l4.981-1.309A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm.126 14.86c-1.637 0-3.042-.647-4.108-1.573l-.264-.176-2.583.678.689-2.52-.19-.304c-.792-1.264-1.24-2.756-1.24-4.341 0-4.227 3.44-7.667 7.667-7.667 4.226 0 7.667 3.44 7.667 7.667 0 4.226-3.441 7.666-7.667 7.666-.123 0-.174-.03-.22-.05v.228z"/></svg>
+                                                                  Send Appeal
+                                                              </a>
+                                                          </div>
+                                                      </div>
+                                                  ))}
+                                                  {matchingDonors.length === 0 && (
+                                                    <div className="py-16 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center p-8">
+                                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-4 text-slate-300">
+                                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        </div>
+                                                        <p className="text-slate-400 font-black uppercase tracking-widest text-[9px] max-w-[180px]">No compatible donors recorded for this geographical cluster.</p>
+                                                    </div>
+                                                  )}
+                                              </div>
                                           </div>
                                       </div>
+                                  ) : (
+                                      <div className="h-[500px] bg-slate-50 border-2 border-dashed border-slate-200 rounded-[4rem] flex flex-col items-center justify-center text-center p-12">
+                                          <div className="w-24 h-24 bg-white rounded-[2rem] flex items-center justify-center shadow-2xl mb-8 group overflow-hidden">
+                                              <div className="w-24 h-24 bg-red-600 absolute blur-3xl opacity-10"></div>
+                                              <svg className="w-10 h-10 text-red-600 relative z-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                          </div>
+                                          <h3 className="text-xl font-black text-slate-900 mb-2">Coordination Pending</h3>
+                                          <p className="text-slate-400 font-bold max-w-[240px] uppercase tracking-widest text-[10px] leading-relaxed">Select a mission from the list to synchronize local life-saving resources.</p>
+                                      </div>
+                                  )}
+                              </div>
+                          </div>
+                      ) : (
+                          // Voluntary Donors List & Advanced Filters View
+                          <div className="space-y-6 animate-in fade-in duration-300">
+                              {/* Advanced Filter Panel */}
+                              <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100/50 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                  <div>
+                                      <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 ml-1">Search Donor</label>
+                                      <input 
+                                          type="text" 
+                                          placeholder="Name, email or phone..." 
+                                          value={donorSearch}
+                                          onChange={(e) => setDonorSearch(e.target.value)}
+                                          className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                                      />
                                   </div>
 
-                                  <div className="space-y-4">
-                                      <div className="flex items-center justify-between px-2">
-                                          <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Validated Matches ({matchingDonors.length})</h4>
-                                      </div>
-                                      <div className="space-y-3">
-                                          {matchingDonors.map(donor => (
-                                              <div key={donor.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex items-center justify-between group hover:border-green-300 hover:shadow-2xl hover:shadow-green-50 transition-all duration-300">
-                                                  <div className="flex items-center gap-4">
-                                                      <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center font-black group-hover:bg-green-50 group-hover:text-green-500 transition-colors">
-                                                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                  <div>
+                                      <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 ml-1">Blood Group</label>
+                                      <select 
+                                          value={donorGroupFilter}
+                                          onChange={(e) => setDonorGroupFilter(e.target.value)}
+                                          className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition cursor-pointer"
+                                      >
+                                          <option value="All">All Groups</option>
+                                          <option value="A+">A+</option>
+                                          <option value="A-">A-</option>
+                                          <option value="B+">B+</option>
+                                          <option value="B-">B-</option>
+                                          <option value="AB+">AB+</option>
+                                          <option value="AB-">AB-</option>
+                                          <option value="O+">O+</option>
+                                          <option value="O-">O-</option>
+                                      </select>
+                                  </div>
+
+                                  <div>
+                                      <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 ml-1">Country</label>
+                                      <select 
+                                          value={donorCountryFilter}
+                                          onChange={(e) => {
+                                              setDonorCountryFilter(e.target.value);
+                                              setDonorCityFilter('All');
+                                          }}
+                                          className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition cursor-pointer"
+                                      >
+                                          <option value="All">All Countries</option>
+                                          {uniqueDonorCountries.map(c => (
+                                              <option key={c} value={c}>{c}</option>
+                                          ))}
+                                      </select>
+                                  </div>
+
+                                  <div>
+                                      <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 ml-1">City</label>
+                                      <select 
+                                          value={donorCityFilter}
+                                          onChange={(e) => setDonorCityFilter(e.target.value)}
+                                          className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition cursor-pointer"
+                                      >
+                                          <option value="All">All Cities</option>
+                                          {uniqueDonorCities.map(c => (
+                                              <option key={c} value={c}>{c}</option>
+                                          ))}
+                                      </select>
+                                  </div>
+                              </div>
+
+                              {/* Donors List */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                  {allDonors
+                                      .filter(donor => {
+                                          const matchesSearch = donorSearch === '' || 
+                                              donor.name.toLowerCase().includes(donorSearch.toLowerCase()) || 
+                                              donor.email.toLowerCase().includes(donorSearch.toLowerCase()) || 
+                                              donor.whatsapp.includes(donorSearch);
+                                          const matchesGroup = donorGroupFilter === 'All' || donor.bloodGroup === donorGroupFilter;
+                                          const matchesCountry = donorCountryFilter === 'All' || donor.country === donorCountryFilter;
+                                          const matchesCity = donorCityFilter === 'All' || donor.city === donorCityFilter;
+                                          return matchesSearch && matchesGroup && matchesCountry && matchesCity;
+                                      })
+                                      .map(donor => (
+                                          <div key={donor.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-lg shadow-slate-100/60 hover:shadow-2xl hover:border-red-200 transition-all duration-300 flex flex-col justify-between relative group overflow-hidden">
+                                              <div className="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-full translate-x-8 -translate-y-8 opacity-45 group-hover:scale-110 transition-transform duration-500"></div>
+                                              <div>
+                                                  <div className="flex justify-between items-start mb-4">
+                                                      <div className="w-12 h-12 bg-red-650 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-md shadow-red-250 shrink-0">
+                                                          {donor.bloodGroup}
                                                       </div>
-                                                      <div>
-                                                          <h4 className="font-black text-slate-900 leading-tight">{donor.name}</h4>
-                                                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{donor.city} • Verified Donor</p>
-                                                      </div>
+                                                      <span className="text-[10px] text-slate-400 font-bold">
+                                                          Joined: {donor.registeredAt ? new Date(donor.registeredAt).toLocaleDateString() : 'N/A'}
+                                                      </span>
                                                   </div>
+
+                                                  <h3 className="text-lg font-black text-slate-900 leading-tight mb-1">{donor.name}</h3>
+                                                  <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest flex items-center gap-1.5 mb-3">
+                                                      <span>📍</span> {donor.city}, {donor.country}
+                                                  </p>
+
+                                                  <div className="space-y-1.5 text-xs text-slate-650 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                      <p className="truncate"><span className="font-extrabold text-slate-450 mr-1">Email:</span>{donor.email}</p>
+                                                      <p className="font-mono text-sky-600"><span className="font-bold text-slate-450 mr-1 font-sans">Phone:</span>{donor.whatsapp}</p>
+                                                  </div>
+                                              </div>
+
+                                              <div className="flex gap-2">
+                                                  <button 
+                                                      onClick={() => {
+                                                          setSelectedDonorForMessage(donor);
+                                                          setMessageBody(`Salam ${donor.name}, We require your life-saving blood donation support in ${donor.city}. Please let us know if you are available.`);
+                                                          setIsSendMessageOpen(true);
+                                                      }}
+                                                      className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1 shadow"
+                                                  >
+                                                      Message
+                                                  </button>
                                                   <a 
-                                                    href={`https://wa.me/${formatPhoneNumberForWhatsApp(donor.whatsapp, donor.country)}?text=${encodeURIComponent(`Salam, Urgent blood required! Patient: ${selectedAppeal.patientName} (${selectedAppeal.bloodGroup}) at ${selectedAppeal.hospital}, ${selectedAppeal.city}. Please help. Contact: ${selectedAppeal.mobile}`)}`}
-                                                    target="_blank" 
-                                                    rel="noreferrer"
-                                                    className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition shadow-xl shadow-green-100 active:scale-90 flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest"
+                                                      href={`https://wa.me/${formatPhoneNumberForWhatsApp(donor.whatsapp, donor.country)}?text=${encodeURIComponent(`Salam ${donor.name}, custom inquiry from life-saver network...`)}`}
+                                                      target="_blank"
+                                                      rel="noreferrer"
+                                                      className="p-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition"
+                                                      title="Chat on WhatsApp"
                                                   >
                                                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.892.527 3.661 1.442 5.174L2 22l4.981-1.309A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm.126 14.86c-1.637 0-3.042-.647-4.108-1.573l-.264-.176-2.583.678.689-2.52-.19-.304c-.792-1.264-1.24-2.756-1.24-4.341 0-4.227 3.44-7.667 7.667-7.667 4.226 0 7.667 3.44 7.667 7.667 0 4.226-3.441 7.666-7.667 7.666-.123 0-.174-.03-.22-.05v.228z"/></svg>
-                                                      Send Appeal
                                                   </a>
+                                                  <button 
+                                                      onClick={() => handleDeleteDonor(donor.id)}
+                                                      className="p-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl transition"
+                                                      title="Delete Donor"
+                                                  >
+                                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                  </button>
                                               </div>
-                                          ))}
-                                          {matchingDonors.length === 0 && (
-                                            <div className="py-16 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center p-8">
-                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-4 text-slate-300">
-                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12"/></svg>
-                                                </div>
-                                                <p className="text-slate-400 font-black uppercase tracking-widest text-[9px] max-w-[180px]">No compatible donors recorded for this geographical cluster.</p>
-                                            </div>
-                                          )}
+                                          </div>
+                                      ))}
+                                  {allDonors.filter(donor => {
+                                      const matchesSearch = donorSearch === '' || 
+                                          donor.name.toLowerCase().includes(donorSearch.toLowerCase()) || 
+                                          donor.email.toLowerCase().includes(donorSearch.toLowerCase()) || 
+                                          donor.whatsapp.includes(donorSearch);
+                                      const matchesGroup = donorGroupFilter === 'All' || donor.bloodGroup === donorGroupFilter;
+                                      const matchesCountry = donorCountryFilter === 'All' || donor.country === donorCountryFilter;
+                                      const matchesCity = donorCityFilter === 'All' || donor.city === donorCityFilter;
+                                      return matchesSearch && matchesGroup && matchesCountry && matchesCity;
+                                  }).length === 0 && (
+                                      <div className="col-span-full py-20 text-center bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+                                          <p className="text-slate-400 font-black tracking-widest uppercase text-xs">No registered voluntary donors found</p>
                                       </div>
-                                  </div>
+                                  )}
                               </div>
-                          ) : (
-                              <div className="h-[500px] bg-slate-50 border-2 border-dashed border-slate-200 rounded-[4rem] flex flex-col items-center justify-center text-center p-12">
-                                  <div className="w-24 h-24 bg-white rounded-[2rem] flex items-center justify-center shadow-2xl mb-8 group overflow-hidden">
-                                      <div className="w-24 h-24 bg-red-600 absolute blur-3xl opacity-10"></div>
-                                      <svg className="w-10 h-10 text-red-600 relative z-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                  </div>
-                                  <h3 className="text-xl font-black text-slate-900 mb-2">Coordination Pending</h3>
-                                  <p className="text-slate-400 font-bold max-w-[240px] uppercase tracking-widest text-[10px] leading-relaxed">Select a mission from the list to synchronize local life-saving resources.</p>
-                              </div>
-                          )}
-                      </div>
+                          </div>
+                      )}
                   </div>
               )}
 
@@ -1078,6 +1322,84 @@ export default function AdminDashboard() {
            </motion.div>
          )}
        </AnimatePresence>
+
+        {/* Custom Send Message Modal */}
+        <AnimatePresence>
+          {isSendMessageOpen && selectedDonorForMessage && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-sm">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-[2.5rem] border border-slate-150 shadow-2xl max-w-lg w-full p-8 flex flex-col gap-6"
+              >
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 mb-1">Direct Message Setup</h3>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Contact voluntary blood donor instantly</p>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-900 font-black text-sm">{selectedDonorForMessage.name}</p>
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">{selectedDonorForMessage.city}, {selectedDonorForMessage.country}</p>
+                  </div>
+                  <div className="bg-red-50 text-red-600 px-3 py-1 rounded-xl text-xs font-black uppercase">
+                    Group: {selectedDonorForMessage.bloodGroup}
+                  </div>
+                </div>
+
+                <form onSubmit={handleSendMessageSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 ml-1">Message Text</label>
+                    <textarea 
+                      required
+                      rows={5}
+                      value={messageBody}
+                      onChange={(e) => setMessageBody(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-800 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                      placeholder="Type your message to the donor here..."
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const whatsappUrl = `https://wa.me/${formatPhoneNumberForWhatsApp(selectedDonorForMessage.whatsapp, selectedDonorForMessage.country)}?text=${encodeURIComponent(messageBody)}`;
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                      disabled={!messageBody.trim()}
+                      className="flex-1 py-3 bg-green-650 hover:bg-green-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-green-150 disabled:opacity-50"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.892.527 3.661 1.442 5.174L2 22l4.981-1.309A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm.126 14.86c-1.637 0-3.042-.647-4.108-1.573l-.264-.176-2.583.678.689-2.52-.19-.304c-.792-1.264-1.24-2.756-1.24-4.341 0-4.227 3.44-7.667 7.667-7.667 4.226 0 7.667 3.44 7.667 7.667 0 4.226-3.441 7.666-7.667 7.666-.123 0-.174-.03-.22-.05v.228z"/></svg>
+                      Open WhatsApp
+                    </button>
+
+                    <button 
+                      type="submit"
+                      disabled={isSendingMessage || !messageBody.trim()}
+                      className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                    >
+                      {isSendingMessage ? 'Logging...' : 'Send System Alert'}
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setIsSendMessageOpen(false);
+                        setMessageBody('');
+                        setSelectedDonorForMessage(null);
+                      }}
+                      className="py-3 px-5 border border-slate-200 text-slate-500 hover:bg-slate-50 font-black text-xs uppercase tracking-widest rounded-xl transition"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
        {/* Custom Confirmation Modal */}
        <AnimatePresence>

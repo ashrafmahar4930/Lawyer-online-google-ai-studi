@@ -90,10 +90,15 @@ const mapToAppProfile = (data: any, uid: string): LawyerProfile => {
     enrollmentOrRollNumber: data.enrollmentOrRollNumber || '',
     yearOfGraduation: data.yearOfGraduation || '',
     barCouncilName: data.barCouncilName || '',
-    isBloodDonor: data.isBloodDonor || false,
+      isBloodDonor: data.isBloodDonor || false,
     bloodGroup: data.bloodGroup || '',
     fullNameLocal: data.fullNameLocal || '',
     specialtyLocal: data.specialtyLocal || '',
+    stateProvince: data.stateProvince || '',
+    languagesSpoken: data.languagesSpoken || [],
+    officeTimingStart: data.officeTimingStart || '',
+    officeTimingEnd: data.officeTimingEnd || '',
+    officeDays: data.officeDays || [],
   };
 };
 
@@ -145,6 +150,11 @@ const mapToDbProfile = (profile: LawyerProfile) => {
         enrollmentOrRollNumber: profile.enrollmentOrRollNumber || '',
         yearOfGraduation: profile.yearOfGraduation || '',
         barCouncilName: profile.barCouncilName || '',
+        stateProvince: profile.stateProvince || '',
+        languagesSpoken: profile.languagesSpoken || [],
+        officeTimingStart: profile.officeTimingStart || '',
+        officeTimingEnd: profile.officeTimingEnd || '',
+        officeDays: profile.officeDays || [],
     };
 };
 
@@ -979,6 +989,7 @@ export const submitBloodAppeal = async (appeal: Omit<BloodAppeal, 'id' | 'status
 
 export const getActiveBloodAppeals = async (): Promise<BloodAppeal[]> => {
   const path = 'blood_appeals';
+  let remoteAppeals: BloodAppeal[] = [];
   try {
     console.log("[getActiveBloodAppeals] Starting fetch (NO FILTER)...");
     console.log("[getActiveBloodAppeals] DB Project ID:", db.app.options.projectId);
@@ -988,7 +999,6 @@ export const getActiveBloodAppeals = async (): Promise<BloodAppeal[]> => {
     const querySnapshot = await getDocs(q);
     
     console.log("[getActiveBloodAppeals] Snapshot received, size:", querySnapshot.size);
-    const appeals: BloodAppeal[] = [];
     const now = new Date().getTime();
     
     for (const document of querySnapshot.docs) {
@@ -1017,16 +1027,73 @@ export const getActiveBloodAppeals = async (): Promise<BloodAppeal[]> => {
           console.log(`[getActiveBloodAppeals] Skipping auto-deletion for expired appeal ${document.id} (not owner or admin)`);
         }
       } else if (data.status === 'active') {
-        appeals.push(data as BloodAppeal);
+        remoteAppeals.push(data as BloodAppeal);
       }
     }
-    
-    return appeals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error: any) {
     // Follow skill instructions for error handling
     handleFirestoreError(error, OperationType.LIST, path, false);
-    const saved = localStorage.getItem('localBloodAppeals');
-    return saved ? JSON.parse(saved) : [];
+  }
+
+  // Load and merge local ones to be safe and robust
+  const saved = localStorage.getItem('localBloodAppeals');
+  const localAppeals: BloodAppeal[] = saved ? JSON.parse(saved) : [];
+  
+  // Exclude expired local ones
+  const now = new Date().getTime();
+  const validLocalAppeals = localAppeals.filter(appeal => {
+    const createdAtTime = appeal.createdAt ? new Date(appeal.createdAt).getTime() : 0;
+    const isExpired = createdAtTime > 0 && (now - createdAtTime > 24 * 60 * 60 * 1000);
+    return !isExpired && appeal.status === 'active';
+  });
+
+  // Combine and remove duplicates by ID
+  const allAppeals = [...remoteAppeals];
+  for (const local of validLocalAppeals) {
+    if (!allAppeals.some(a => a.id === local.id)) {
+      allAppeals.push(local);
+    }
+  }
+
+  return allAppeals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+};
+
+export const getAllBloodDonors = async (): Promise<BloodDonor[]> => {
+  let remoteDonors: BloodDonor[] = [];
+  try {
+    const q = query(collection(db, 'blood_donors'));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      remoteDonors.push(doc.data() as BloodDonor);
+    });
+  } catch (error) {
+    console.error("Error fetching remote blood donors:", error);
+  }
+
+  // Combine with local ones to be safe and robust
+  const saved = localStorage.getItem('localBloodDonors');
+  const localDonors: BloodDonor[] = saved ? JSON.parse(saved) : [];
+  
+  const allDonors = [...remoteDonors];
+  for (const local of localDonors) {
+    if (!allDonors.some(d => d.id === local.id)) {
+      allDonors.push(local);
+    }
+  }
+  return allDonors.sort((a, b) => new Date(b.registeredAt || 0).getTime() - new Date(a.registeredAt || 0).getTime());
+};
+
+export const deleteBloodDonor = async (donorId: string) => {
+  try {
+    await deleteDoc(doc(db, 'blood_donors', donorId));
+  } catch (error) {
+    console.error("Error deleting remote blood donor:", error);
+  }
+  const saved = localStorage.getItem('localBloodDonors');
+  if (saved) {
+    const existing: BloodDonor[] = JSON.parse(saved);
+    const filtered = existing.filter(d => d.id !== donorId);
+    localStorage.setItem('localBloodDonors', JSON.stringify(filtered));
   }
 };
 
@@ -1072,6 +1139,37 @@ export const getMatchingDonors = async (bloodGroup: string, country: string, cit
       }
       return isMatch;
     });
+  }
+};
+
+export const sendBloodDonorMessage = async (donorId: string, donorName: string, messageText: string, sentBy: string) => {
+  try {
+    const msgRef = doc(collection(db, 'blood_messages'));
+    const newMessage = {
+      id: msgRef.id,
+      donorId,
+      donorName,
+      message: messageText,
+      sentAt: new Date().toISOString(),
+      sentBy
+    };
+    await setDoc(msgRef, newMessage);
+    return msgRef.id;
+  } catch (error) {
+    console.error("Error saving blood message online:", error);
+    const newMessage = {
+      id: `local_msg_${Date.now()}`,
+      donorId,
+      donorName,
+      message: messageText,
+      sentAt: new Date().toISOString(),
+      sentBy
+    };
+    const saved = localStorage.getItem('localBloodMessages');
+    const existing = saved ? JSON.parse(saved) : [];
+    existing.push(newMessage);
+    localStorage.setItem('localBloodMessages', JSON.stringify(existing));
+    return newMessage.id;
   }
 };
 
@@ -1159,6 +1257,19 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
         rating: avgRating,
         reviewCount: count
       });
+
+      // Notify the lawyer of the new rating review
+      try {
+        await createNotification(
+          lawyerId,
+          'New Client Review! (نیا ریویو موصول ہوا)',
+          `Client ${review.clientName} has posted a ${review.rating}★ rating and review of your services.`,
+          'rating',
+          '/dashboard/lawyer'
+        );
+      } catch (e) {
+        console.warn("Could not handle notification for addReview:", e);
+      }
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, currentPath);
@@ -1316,9 +1427,39 @@ export const voteLegalQuestion = async (questionId: string, voteType: 'up' | 'do
       if (voteType === 'up') {
         const currentUpvotes = qData.upvotes || 0;
         await updateDoc(qRef, { upvotes: currentUpvotes + 1 });
+        
+        // Notify the question owner
+        if (qData.clientId && qData.clientId !== 'anonymous') {
+          try {
+            await createNotification(
+              qData.clientId,
+              'Question Upvoted! (سوال کو اپ ووٹ کیا گیا ہے)',
+              `Your legal question "${qData.title.substring(0, 35)}..." has received a community upvote!`,
+              'info',
+              '/qa'
+            );
+          } catch (e) {
+            console.warn("Could not handle upvote notification:", e);
+          }
+        }
       } else {
         const currentDownvotes = qData.downvotes || 0;
         await updateDoc(qRef, { downvotes: currentDownvotes + 1 });
+        
+        // Notify the question owner on feedback
+        if (qData.clientId && qData.clientId !== 'anonymous') {
+          try {
+            await createNotification(
+              qData.clientId,
+              'Question Feedback (سوال پر فیڈ بیک)',
+              `Your legal question "${qData.title.substring(0, 35)}..." has received new feedback rating.`,
+              'info',
+              '/qa'
+            );
+          } catch (e) {
+            console.warn("Could not handle downvote notification:", e);
+          }
+        }
       }
     }
   } catch (error) {
@@ -1336,9 +1477,39 @@ export const voteLegalAnswer = async (answerId: string, voteType: 'up' | 'down')
       if (voteType === 'up') {
         const currentUpvotes = aData.upvotes || 0;
         await updateDoc(aRef, { upvotes: currentUpvotes + 1 });
+        
+        // Notify the lawyer who wrote the answer
+        if (aData.lawyerId && aData.lawyerId !== 'ai_admin_bot') {
+          try {
+            await createNotification(
+              aData.lawyerId,
+              'Response Upvoted! (جواب کو اپ ووٹ کیا گیا ہے)',
+              `Your professional legal advisory on thread is upvoted by a community member!`,
+              'info',
+              '/qa'
+            );
+          } catch (e) {
+            console.warn("Could not handle answer upvote notification:", e);
+          }
+        }
       } else {
         const currentDownvotes = aData.downvotes || 0;
         await updateDoc(aRef, { downvotes: currentDownvotes + 1 });
+        
+        // Notify lawyer of rating feedback
+        if (aData.lawyerId && aData.lawyerId !== 'ai_admin_bot') {
+          try {
+            await createNotification(
+              aData.lawyerId,
+              'Response Feedback (جواب پر فیڈ بیک)',
+              `Your professional legal advisory on thread received community feedback rating.`,
+              'info',
+              '/qa'
+            );
+          } catch (e) {
+            console.warn("Could not handle answer downvote notification:", e);
+          }
+        }
       }
     }
   } catch (error) {

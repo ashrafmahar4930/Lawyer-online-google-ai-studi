@@ -86,16 +86,23 @@ service cloud.firestore {
     // --- BLOOD APPEALS ---
     match /blood_appeals/{appealId} {
       allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.requesterId == request.auth.uid);
+      allow create: if true;
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.requesterId == request.auth.uid) || resource.data.requesterId == 'anonymous';
     }
     
     // --- BLOOD DONORS ---
     match /blood_donors/{donorId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.auth.uid == donorId;
+      allow create: if true;
       allow update: if isAdmin() || (isSignedIn() && request.auth.uid == donorId);
       allow delete: if isAdmin();
+    }
+    
+    // --- BLOOD MESSAGES ---
+    match /blood_messages/{messageId} {
+      allow read, get, list: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
     
     // --- LEGAL QUESTIONS ---

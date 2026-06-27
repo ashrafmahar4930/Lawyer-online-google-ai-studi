@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { getClientCases, getCaseLedger } from '../services/mockDataService';
 import { Case, LedgerEntry } from '../types';
-import { Calendar, CreditCard, FolderOpen, Video } from 'lucide-react';
+import { Calendar, CreditCard, FolderOpen, Video, FileText } from 'lucide-react';
+import InvoiceModal from '../components/InvoiceModal';
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
@@ -11,6 +12,11 @@ export default function ClientDashboard() {
   const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(true);
   const [ledgers, setLedgers] = useState<Record<string, LedgerEntry[]>>({});
+
+  // Invoice modal states for Client
+  const [selectedLedger, setSelectedLedger] = useState<LedgerEntry | null>(null);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,6 +121,17 @@ export default function ClientDashboard() {
                                              <div className="w-full">
                                                  <div className="flex justify-between items-start mb-1">
                                                      <p className="text-xs font-bold text-slate-700">{k.description}</p>
+                                                     <button 
+                                                         onClick={() => {
+                                                             setSelectedLedger(k);
+                                                             setSelectedCase(c);
+                                                             setIsInvoiceModalOpen(true);
+                                                         }}
+                                                         className="text-blue-600 hover:text-blue-800 p-1 bg-blue-50 hover:bg-blue-100 rounded transition flex items-center gap-1 text-[10px] font-bold shrink-0 cursor-pointer animate-pulse"
+                                                         title="View/Download Invoice"
+                                                     >
+                                                         <FileText className="w-3.5 h-3.5" /> Invoice
+                                                     </button>
                                                  </div>
                                                  <div className="grid grid-cols-2 gap-2 text-xs">
                                                     <div>
@@ -151,6 +168,19 @@ export default function ClientDashboard() {
              </div>
           )}
       </div>
+
+      {selectedLedger && selectedCase && (
+          <InvoiceModal 
+              isOpen={isInvoiceModalOpen}
+              onClose={() => {
+                  setIsInvoiceModalOpen(false);
+                  setSelectedLedger(null);
+                  setSelectedCase(null);
+              }}
+              entry={selectedLedger}
+              caseData={selectedCase}
+          />
+      )}
     </div>
   );
 }

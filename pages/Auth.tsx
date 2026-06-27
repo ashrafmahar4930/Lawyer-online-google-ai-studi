@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
 import { auth, googleProvider } from '../services/firebase';
 import { setUserRole, getLawyerProfile } from '../services/mockDataService';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '../App'; // Import useAuth to listen to global auth state
+import { Eye, EyeOff } from 'lucide-react';
 
 interface AuthProps {
   isLogin: boolean;
@@ -18,6 +19,8 @@ export default function Auth({ isLogin }: AuthProps) {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
   const navigate = useNavigate();
 
   const { user: authUser, isLoading: authLoading } = useAuth(); // Global auth state
@@ -97,6 +100,26 @@ export default function Auth({ isLogin }: AuthProps) {
     }
   };
 
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Please enter your email address first.');
+      return;
+    }
+    setError('');
+    setSuccessMessage('');
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccessMessage('A password reset link has been sent to your email! Please check your inbox.');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to send password reset email. Please verify the email is correct.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setError('');
     
@@ -128,6 +151,63 @@ export default function Auth({ isLogin }: AuthProps) {
       setLoading(false);
     }
   };
+
+  if (isResetMode) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
+              Reset your password
+            </h2>
+            <p className="mt-2 text-center text-sm text-slate-600">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+          </div>
+          
+          <form className="mt-8 space-y-6" onSubmit={handleForgotPasswordSubmit}>
+            <div>
+              <label htmlFor="reset-email" className="sr-only">Email address</label>
+              <input
+                id="reset-email"
+                type="email"
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            {error && <div className="text-red-600 text-sm text-center">{error}</div>}
+            {successMessage && <div className="text-green-600 text-sm text-center">{successMessage}</div>}
+
+            <div className="flex flex-col gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setIsResetMode(false);
+                  setError('');
+                  setSuccessMessage('');
+                }}
+                className="text-center text-sm font-medium text-blue-600 hover:text-blue-500"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-slate-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -223,17 +303,44 @@ export default function Auth({ isLogin }: AuthProps) {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none z-20"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
+            
+            {isLogin && (
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResetMode(true);
+                    setError('');
+                    setSuccessMessage('');
+                  }}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-500 focus:outline-none"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
             
             {error && !error.includes('select') && <div className="text-red-600 text-sm text-center mt-2">{error}</div>}
             {successMessage && <div className="text-green-600 text-sm text-center mt-2">{successMessage}</div>}

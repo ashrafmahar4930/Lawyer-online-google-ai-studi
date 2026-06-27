@@ -6,6 +6,7 @@ import { LawyerProfile, Review } from '../types';
 import { formatPhoneNumberForWhatsApp } from '../utils/phoneUtils';
 import { useAuth } from '../App';
 import AnimatedLogo from '../components/AnimatedLogo';
+import { isLawyerAvailable, getAvailabilityStatusText } from '../utils/availabilityUtils';
 
 interface DisplayLabels {
   summaryTitle: string;
@@ -426,14 +427,42 @@ export default function LawyerProfilePage() {
                         <h3 className="text-xs font-black uppercase text-slate-500 tracking-wider text-center border-b pb-2 mb-1">
                             {isTranslated ? 'براہ راست رابطہ سینٹر / संचार हब' : 'Direct Communication Hub'}
                         </h3>
+
+                        {/* Live Availability Status Indicator */}
+                        {(() => {
+                            const avail = getAvailabilityStatusText(profile, isTranslated);
+                            return (
+                                <div className={`p-2.5 rounded-xl border text-center text-xs font-semibold ${avail.colorClass}`}>
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <span className={`w-2 h-2 rounded-full ${avail.isAvailable ? 'bg-green-500 animate-pulse' : 'bg-rose-500'}`}></span>
+                                        {avail.text}
+                                    </div>
+                                    {profile.officeTimingStart && (
+                                        <div className="text-[10px] text-slate-500 mt-1 font-medium">
+                                            🕒 Timings: {profile.officeTimingStart} - {profile.officeTimingEnd} ({profile.officeDays?.join(', ') || 'Mon-Fri'})
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
                         
                         {/* 1. Direct Voice call */}
-                        <a 
-                            href={`tel:${profile.contactMobile}`}
-                            className="w-full h-11 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl transition text-xs flex items-center justify-center gap-2"
-                        >
-                            {getLabels(profile.country, isTranslated).voiceCall}
-                        </a>
+                        {isLawyerAvailable(profile) ? (
+                            <a 
+                                href={`tel:${profile.contactMobile}`}
+                                className="w-full h-11 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                📞 {getLabels(profile.country, isTranslated).voiceCall}
+                            </a>
+                        ) : (
+                            <button 
+                                disabled
+                                title="Voice Call is turned off outside office timings."
+                                className="w-full h-11 bg-slate-100 text-slate-400 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200"
+                            >
+                                🔒 {getLabels(profile.country, isTranslated).voiceCall} ({isTranslated ? 'بند ہے' : 'Offline'})
+                            </button>
+                        )}
 
                         {/* 2. WhatsApp message */}
                         <a 
@@ -441,21 +470,31 @@ export default function LawyerProfilePage() {
                             target="_blank"
                             rel="noreferrer"
                             onClick={handleBookClick}
-                            className="w-full h-11 bg-green-50 hover:bg-green-100 text-green-700 font-bold rounded-xl transition text-xs flex items-center justify-center gap-2"
+                            className="w-full h-11 bg-green-50 hover:bg-green-100 text-green-700 font-bold rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-sm"
                         >
-                            {getLabels(profile.country, isTranslated).whatsappChat}
+                            💬 {getLabels(profile.country, isTranslated).whatsappChat}
                         </a>
 
                         {/* 3. WhatsApp call */}
-                        <a 
-                            href={`https://wa.me/${cleanPhone}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={handleWhatsappCallClick}
-                            className="w-full h-11 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl transition text-xs flex items-center justify-center gap-2"
-                        >
-                            {getLabels(profile.country, isTranslated).whatsappVoice}
-                        </a>
+                        {isLawyerAvailable(profile) ? (
+                            <a 
+                                href={`https://wa.me/${cleanPhone}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={handleWhatsappCallClick}
+                                className="w-full h-11 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                {getLabels(profile.country, isTranslated).whatsappVoice}
+                            </a>
+                        ) : (
+                            <button 
+                                disabled
+                                title="WhatsApp Call is turned off outside office timings."
+                                className="w-full h-11 bg-slate-100 text-slate-400 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200"
+                            >
+                                🔒 {getLabels(profile.country, isTranslated).whatsappVoice} ({isTranslated ? 'بند ہے' : 'Offline'})
+                            </button>
+                        )}
 
                         <div className="border-t border-dashed border-slate-200 pt-2 shrink-0"></div>
 
@@ -526,12 +565,23 @@ export default function LawyerProfilePage() {
                                 {isTranslated ? 'براہ راست رابطہ سینٹر' : 'Direct Communication'}
                             </h3>
                             <div className="grid grid-cols-2 gap-2">
-                                <a 
-                                    href={`tel:${profile.contactMobile}`}
-                                    className="h-10 bg-blue-50/80 hover:bg-blue-100 text-blue-700 font-bold rounded-xl transition text-[11px] flex items-center justify-center gap-1.5 border border-blue-100/30"
-                                >
-                                    📞 {isTranslated ? 'براہ راست کال' : 'Call'}
-                                </a>
+                                {isLawyerAvailable(profile) ? (
+                                    <a 
+                                        href={`tel:${profile.contactMobile}`}
+                                        className="h-10 bg-blue-50/80 hover:bg-blue-100 text-blue-700 font-bold rounded-xl transition text-[11px] flex items-center justify-center gap-1.5 border border-blue-100/30"
+                                    >
+                                        📞 {isTranslated ? 'براہ راست کال' : 'Call'}
+                                    </a>
+                                ) : (
+                                    <button 
+                                        disabled
+                                        title="Direct Call is turned off outside office hours."
+                                        className="h-10 bg-slate-100 text-slate-400 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1.5 border border-slate-200 cursor-not-allowed"
+                                    >
+                                        🔒 {isTranslated ? 'کال بند ہے' : 'Call Off'}
+                                    </button>
+                                )}
+
                                 <a 
                                     href={whatsappMsgLink}
                                     target="_blank"
@@ -541,15 +591,27 @@ export default function LawyerProfilePage() {
                                 >
                                     💬 {isTranslated ? 'واٹس ایپ چیٹ' : 'WhatsApp'}
                                 </a>
-                                <a 
-                                    href={`https://wa.me/${cleanPhone}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onClick={handleWhatsappCallClick}
-                                    className="h-10 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl transition text-[11px] flex items-center justify-center gap-1.5 border border-emerald-100/30"
-                                >
-                                    📱 {isTranslated ? 'واٹس ایپ وائس' : 'WA Call'}
-                                </a>
+
+                                {isLawyerAvailable(profile) ? (
+                                    <a 
+                                        href={`https://wa.me/${cleanPhone}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onClick={handleWhatsappCallClick}
+                                        className="h-10 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl transition text-[11px] flex items-center justify-center gap-1.5 border border-emerald-100/30"
+                                    >
+                                        📱 {isTranslated ? 'واٹس ایپ وائس' : 'WA Call'}
+                                    </a>
+                                ) : (
+                                    <button 
+                                        disabled
+                                        title="WhatsApp Call is turned off outside office hours."
+                                        className="h-10 bg-slate-100 text-slate-400 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1.5 border border-slate-200 cursor-not-allowed"
+                                    >
+                                        🔒 {isTranslated ? 'کال بند ہے' : 'WA Call Off'}
+                                    </button>
+                                )}
+
                                 <button 
                                     onClick={initInstantMeeting}
                                     className="h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-black rounded-xl transition-all shadow-sm text-[10px] uppercase tracking-wider flex items-center justify-center gap-1"

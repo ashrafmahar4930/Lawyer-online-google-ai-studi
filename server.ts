@@ -467,31 +467,67 @@ Category: "${category || 'General Practice'}"`;
   });
 
   app.post("/api/gemini/generate-bio", async (req, res) => {
-    const { fullName, title, experience, specialties, achievements } = req.body;
+    const { fullName, title, experience, specialties, achievements, country, city, languagesSpoken } = req.body;
     try {
       const specText = Array.isArray(specialties) && specialties.length > 0 
         ? specialties.join(", ") 
         : "General Legal Practice";
-      const prompt = `Write a professional, eye-catching, and SEO-optimized attorney biography/about-me description for:
+      const langsText = Array.isArray(languagesSpoken) && languagesSpoken.length > 0
+        ? languagesSpoken.join(", ")
+        : "English";
+
+      const prompt = `Write a professional, eye-catching, and SEO-optimized attorney biography/about-me description in both:
+      1. English (aboutMe)
+      2. The country's primary local/national language/script (aboutMeLocal) (e.g., Urdu nastaliq script for Pakistan, Devanagari Hindi for India, Arabic for UAE, Spanish for Spain, etc.).
+
+      Attorney Details:
       - Name: ${fullName}
       - Title: ${title || "Advocate"}
       - Experience: ${experience || "Experienced Lawyer"}
       - Specialties: ${specText}
       - Core Achievements: ${achievements || "Committed to delivering outstanding legal solutions."}
+      - Location: ${city || "General"}, ${country || "General"}
+      - Languages Spoken: ${langsText}
       
-      Requirements:
+      Requirements for English (aboutMe):
       1. Write in clear, formal, and authoritative English that inspires trust in potential clients.
       2. Ensure it highlights relevant legal keywords naturally to improve search engine optimization (SEO) ranking.
       3. Focus on professionalism, accessibility, and depth of legal expertise.
-      4. Avoid generic fluff or cliches; make it read authentic, highly polished, and convincing.
-      5. Keep it to approximately 100 to 150 words. Write a single cohesive, high-impact paragraph. Do not include placeholders, template brackets, formatting headers, or markdown wrappers.`;
+      4. Keep it to approximately 100 to 150 words as a single cohesive paragraph. Do not include template placeholders.
+
+      Requirements for Local Language (aboutMeLocal):
+      1. Translate and craft the same professional biography into the primary local/national language and script of "${country}" (e.g. Nastaliq script Urdu for Pakistan, Hindi for India, Arabic for UAE, etc.).
+      2. Ensure it reads naturally, respects local legal terminology, and has the same highly professional and trustworthy tone.
+      3. Keep it to approximately 100 to 150 words in that local script as a single cohesive paragraph. Do not use romanized text (e.g., write actual Urdu/Hindi/Arabic script, not Roman Urdu/Roman Hindi).`;
 
       const response = await getAi().models.generateContent({
         model: "gemini-3.5-flash",
         contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              aboutMe: {
+                type: Type.STRING,
+                description: "The English biography. Single cohesive paragraph, no template placeholders."
+              },
+              aboutMeLocal: {
+                type: Type.STRING,
+                description: "The primary local language biography in local script (e.g., Urdu script, Hindi script). Single cohesive paragraph."
+              }
+            },
+            required: ["aboutMe", "aboutMeLocal"]
+          }
+        }
       });
 
-      res.json({ text: response.text || "No bio generated." });
+      const jsonText = response.text?.trim() || "{}";
+      const result = JSON.parse(jsonText);
+      res.json({
+        text: result.aboutMe || "No English bio generated.",
+        aboutMeLocal: result.aboutMeLocal || "No local bio generated."
+      });
     } catch (error) {
       console.error("Gemini Bio Generation Error:", error);
       res.status(500).json({ error: "Failed to generate SEO biography with AI." });
@@ -529,6 +565,65 @@ Category: "${category || 'General Practice'}"`;
     } catch (error) {
       console.error("Gemini Translation Error:", error);
       res.status(500).json({ error: "Failed to perform AI translation." });
+    }
+  });
+
+  app.post("/api/gemini/profile-assistant", async (req, res) => {
+    const { fullName, specialty, city, country } = req.body;
+    if (!city || !country) {
+      return res.status(400).json({ error: "City and Country are required for auto-detection." });
+    }
+    try {
+      const prompt = `You are an AI Lawyer Assistant helping a lawyer set up their profile.
+      Given the lawyer's:
+      - Full Name: "${fullName || 'Advocate'}"
+      - Specialty: "${specialty || 'General Practice'}"
+      - City: "${city}"
+      - Country: "${country}"
+
+      Please auto-detect and generate:
+      1. stateProvince: The exact state/province/region (e.g. Punjab, Sindh, Khyber Pakhtunkhwa, Balochistan, California, Maharashtra etc.) of "${city}" in "${country}".
+      2. fullNameLocal: Transliterate/translate the Full Name "${fullName}" to the local language of "${country}" (e.g. Urdu/Arabic script for Pakistan, Hindi script for India, etc.).
+      3. specialtyLocal: Translate the specialty "${specialty}" to the local language of "${country}".
+      4. languagesSpoken: An array of 1 to 4 languages spoken/understood in this city/country region (e.g. for Lahore/Pakistan: ["English", "Urdu", "Punjabi"], for Karachi/Pakistan: ["English", "Urdu", "Sindhi"], etc.). Choose from common languages: English, Urdu, Punjabi, Sindhi, Pashto, Balochi, Saraiki, Hindko, Kashmiri, Hindi, Bengali, Arabic, etc.`;
+
+      const response = await getAi().models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              stateProvince: {
+                type: Type.STRING,
+                description: "The name of the state, province, or administrative region where the city is located."
+              },
+              fullNameLocal: {
+                type: Type.STRING,
+                description: "The Full Name rendered elegantly in the country's main local script (e.g., Urdu, Arabic, Hindi, etc.)."
+              },
+              specialtyLocal: {
+                type: Type.STRING,
+                description: "The primary specialty rendered elegantly in the country's main local language."
+              },
+              languagesSpoken: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "List of typical languages spoken/understood by professionals in that city/country."
+              }
+            },
+            required: ["stateProvince", "fullNameLocal", "specialtyLocal", "languagesSpoken"]
+          }
+        }
+      });
+
+      const jsonText = response.text?.trim() || "{}";
+      const result = JSON.parse(jsonText);
+      res.json(result);
+    } catch (error) {
+      console.error("Gemini Profile Assistant Error:", error);
+      res.status(500).json({ error: "Failed to run profile assistant." });
     }
   });
 

@@ -52,6 +52,11 @@ export interface LawyerProfile {
   barCouncilName?: string;
   bloodGroup?: string;
   isBloodDonor: boolean;
+  stateProvince?: string; // Soba/Province
+  languagesSpoken?: string[]; // Languages understood/spoken
+  officeTimingStart?: string; // E.g., "09:00"
+  officeTimingEnd?: string; // E.g., "17:00"
+  officeDays?: string[]; // E.g., ["Monday", "Tuesday"]
 }
 
 export interface ImportantDate {
@@ -205,5 +210,15 @@ export interface AppNotification {
   isRead: boolean;
   link?: string;
 }
+
+export interface BloodMessage {
+  id: string;
+  donorId: string;
+  donorName: string;
+  message: string;
+  sentAt: string;
+  sentBy: string;
+}
+
 
 

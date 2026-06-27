@@ -17,6 +17,49 @@ export default function Ledger() {
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
+  // Editing states
+  const [editingLedger, setEditingLedger] = useState<LedgerEntry | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editedTotal, setEditedTotal] = useState(0);
+  const [editedPaid, setEditedPaid] = useState(0);
+  const [editedDesc, setEditedDesc] = useState('');
+  const [editedDueDate, setEditedDueDate] = useState('');
+
+  const handleEditLedgerClick = (entry: LedgerEntry) => {
+    setEditingLedger(entry);
+    setEditedDesc(entry.description);
+    setEditedTotal(entry.totalAmount);
+    setEditedPaid(entry.paidAmount);
+    setEditedDueDate(entry.nextPaymentDueDate || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateLedger = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLedger) return;
+
+    const remaining = Number(editedTotal) - Number(editedPaid);
+    const updated: LedgerEntry = {
+      ...editingLedger,
+      description: editedDesc,
+      totalAmount: Number(editedTotal),
+      paidAmount: Number(editedPaid),
+      remainingAmount: remaining,
+      nextPaymentDueDate: editedDueDate,
+    };
+
+    try {
+      await db.addLedgerEntry(updated); // setDoc overwrites
+      setLedgerEntries(prev => prev.map(k => k.id === updated.id ? updated : k));
+      setIsEditModalOpen(false);
+      setEditingLedger(null);
+      alert("Ledger transaction updated successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update ledger transaction.");
+    }
+  };
+
   useEffect(() => {
     if (user) {
       loadData();
@@ -169,6 +212,15 @@ export default function Ledger() {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                             </svg>
                                                         </button>
+                                                        <button 
+                                                            onClick={() => handleEditLedgerClick(e)}
+                                                            className="text-amber-500 hover:text-amber-700 hover:bg-amber-50 p-1.5 rounded-lg transition cursor-pointer"
+                                                            title="Edit / Record Payment"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </button>
                                                         <button onClick={() => handleDeleteLedger(e.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition cursor-pointer" title="Delete record">
                                                             <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2m3 3h7" /></svg>
                                                         </button>
@@ -207,6 +259,80 @@ export default function Ledger() {
                 entry={selectedLedger}
                 caseData={selectedCase}
             />
+        )}
+
+        {isEditModalOpen && editingLedger && (
+            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex justify-between items-center mb-6 pb-2 border-b">
+                        <h3 className="font-bold text-xl text-slate-800 font-serif">Update Transaction</h3>
+                        <button 
+                            onClick={() => { setIsEditModalOpen(false); setEditingLedger(null); }}
+                            className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                    <form onSubmit={handleUpdateLedger} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fee Description</label>
+                            <input 
+                                type="text"
+                                className="w-full border-slate-200 border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                value={editedDesc}
+                                onChange={e => setEditedDesc(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Total (Rs)</label>
+                                <input 
+                                    type="number"
+                                    className="w-full border-slate-200 border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={editedTotal}
+                                    onChange={e => setEditedTotal(Number(e.target.value))}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Paid (Rs)</label>
+                                <input 
+                                    type="number"
+                                    className="w-full border-slate-200 border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={editedPaid}
+                                    onChange={e => setEditedPaid(Number(e.target.value))}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Payment Due Date</label>
+                            <input 
+                                type="date"
+                                className="w-full border-slate-200 border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                value={editedDueDate}
+                                onChange={e => setEditedDueDate(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex gap-3 pt-4">
+                            <button 
+                                type="button"
+                                onClick={() => { setIsEditModalOpen(false); setEditingLedger(null); }}
+                                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition text-center text-sm cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit"
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition text-center text-sm cursor-pointer shadow-lg animate-pulse"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         )}
       </div>
     );
