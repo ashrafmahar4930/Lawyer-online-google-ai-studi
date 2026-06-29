@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
 import { auth, googleProvider } from '../services/firebase';
 import { setUserRole, getLawyerProfile } from '../services/mockDataService';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '../App'; // Import useAuth to listen to global auth state
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -24,6 +24,31 @@ export default function Auth({ isLogin }: AuthProps) {
   const navigate = useNavigate();
 
   const { user: authUser, isLoading: authLoading } = useAuth(); // Global auth state
+
+  // Handle redirect result from Google Sign-In
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        setLoading(true);
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const user = result.user;
+          const savedRole = localStorage.getItem('intended_signup_role');
+          if (savedRole) {
+            await setUserRole(user.uid, savedRole as UserRole, user.email || '', user.displayName || undefined);
+            localStorage.removeItem('intended_signup_role');
+          }
+          setSuccessMessage('Google Sign-In successful!');
+        }
+      } catch (err: any) {
+        console.error("Redirect Sign-In Error:", err);
+        setError(err.message || 'Google Sign-In failed');
+      } finally {
+        setLoading(false);
+      }
+    };
+    handleRedirectResult();
+  }, []);
 
   // Effect to handle navigation after global auth state is updated
   useEffect(() => {
@@ -124,8 +149,6 @@ export default function Auth({ isLogin }: AuthProps) {
     setError('');
     
     // VALIDATION: Check if role is selected for Google Sign Up (if not logging in)
-    // Note: For Google, we can't easily know if it's login or signup beforehand without checking DB.
-    // But based on your requirement to force selection, we apply it if the user is on the "Sign Up" tab.
     if (!isLogin && !role) {
         alert('Notice: Please select your account type (Lawyer or Client) before proceeding with Google Sign-Up.');
         setError('Please select whether you are a Client or a Lawyer before signing up with Google.');
@@ -134,20 +157,16 @@ export default function Auth({ isLogin }: AuthProps) {
 
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      
-      // If on Signup page, we enforce the selected role for new users.
-      // If on Login page, logic in App.tsx handles fetching existing role.
+      // If on Signup page, we can try to save the intended role to local storage so we have it after redirect
       if (!isLogin && role) {
-          await setUserRole(user.uid, role as UserRole, user.email || '', user.displayName || undefined);
+          localStorage.setItem('intended_signup_role', role);
       }
       
-      setSuccessMessage('Google Sign-In successful!');
+      // Use redirect instead of popup for better mobile support
+      await signInWithRedirect(auth, googleProvider);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Google Sign-In failed');
-    } finally {
+      setError(err.message || 'Google Sign-In failed to start');
       setLoading(false);
     }
   };

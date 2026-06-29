@@ -47,10 +47,12 @@ export default function Navbar() {
       <div className="container mx-auto px-4 w-full">
         <div className="flex justify-between items-center w-full">
           <Link to="/" className="flex items-center space-x-2 group">
-            {/* Restored: White square box with stylized 'L' for elevated high-contrast branding */}
-            <div className="w-7 h-7 bg-white text-blue-950 flex items-center justify-center rounded font-black font-serif shadow-sm text-base group-hover:scale-105 transition-transform duration-300">
-              L
-            </div>
+            {/* Logo Image */}
+            <img 
+               src="/logo.png" 
+               alt="LawyerOnline Logo" 
+               className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
+            />
 
             {/* Highly dynamic rotating domain brand badge in header */}
             <div className="flex flex-col">

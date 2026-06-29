@@ -1083,9 +1083,11 @@ export default function AdminDashboard() {
                                        <div className="flex items-center space-x-2">
                                            {/* Box logo symbol */}
                                            {(activeLogoType === 'both' || activeLogoType === 'logo-only') && (
-                                               <div className="w-8 h-8 bg-white text-slate-950 flex items-center justify-center rounded font-serif font-black text-lg">
-                                                   L
-                                               </div>
+                                               <img 
+                                                  src="/logo.png" 
+                                                  alt="LawyerOnline Logo" 
+                                                  className="w-10 h-10 object-contain drop-shadow-sm"
+                                               />
                                            )}
                                            
                                            {/* Badge */}

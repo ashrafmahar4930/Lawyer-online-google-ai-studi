@@ -30,6 +30,7 @@ import DownloadApp from './pages/DownloadApp';
 import Sitemap from './pages/Sitemap';
 import HelpCenter from './pages/HelpCenter';
 import AboutUs from './pages/AboutUs';
+import NotFound from './pages/NotFound';
 
 // Sub-pages for Lawyer Dashboard
 import LawyerDashboardLayout from './components/LawyerDashboardLayout';
@@ -342,6 +343,7 @@ export default function App() {
                     <ClientDashboard />
                   </ProtectedRoute>
                 } />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <footer className="bg-blue-950 text-blue-200 py-6 border-t border-blue-900">
