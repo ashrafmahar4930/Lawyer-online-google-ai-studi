@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import NotificationCenter from './NotificationCenter';
 import AnimatedLogo from './AnimatedLogo';
+import * as db from '../services/mockDataService';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -10,6 +11,28 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [logoUrl, setLogoUrl] = useState<string>('/logo.png');
+
+  const fetchBranding = async () => {
+    // Quick load from local storage first for speed
+    const localLogo = localStorage.getItem('customBrandLogo');
+    if (localLogo) setLogoUrl(localLogo);
+
+    // Sync with DB
+    const branding = await db.getSystemBranding();
+    if (branding && branding.logoUrl) {
+      setLogoUrl(branding.logoUrl);
+      localStorage.setItem('customBrandLogo', branding.logoUrl);
+    }
+  };
+
+  useEffect(() => {
+    fetchBranding();
+
+    const handleUpdate = () => fetchBranding();
+    window.addEventListener('brand_logo_updated', handleUpdate);
+    return () => window.removeEventListener('brand_logo_updated', handleUpdate);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -20,7 +43,6 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
 
   const handleLogout = () => {
     logout();
@@ -48,11 +70,13 @@ export default function Navbar() {
         <div className="flex justify-between items-center w-full">
           <Link to="/" className="flex items-center space-x-2 group">
             {/* Logo Image */}
-            <img 
-               src="/logo.png" 
-               alt="LawyerOnline Logo" 
-               className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
-            />
+            <div className="group-hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+              <img 
+                 src={logoUrl} 
+                 alt="LawyerOnline Logo" 
+                 className="w-12 h-12 object-contain"
+              />
+            </div>
 
             {/* Highly dynamic rotating domain brand badge in header */}
             <div className="flex flex-col">

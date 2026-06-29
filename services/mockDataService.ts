@@ -9,7 +9,31 @@ import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'fi
 import { handleFirestoreError, OperationType } from '../utils/firebaseErrors';
 import { logService } from './logService';
 
-// --- Storage Helpers ---
+// --- System Branding Helpers ---
+export const getSystemBranding = async () => {
+  try {
+    const docRef = doc(db, 'system', 'branding');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching system branding:", error);
+    return null;
+  }
+};
+
+export const updateSystemBranding = async (data: any) => {
+  try {
+    const docRef = doc(db, 'system', 'branding');
+    await setDoc(docRef, data, { merge: true });
+    return true;
+  } catch (error) {
+    console.error("Error updating system branding:", error);
+    return false;
+  }
+};
 
 export const deleteFile = async (fileUrl: string) => {
   if (!fileUrl || !fileUrl.includes('firebasestorage.googleapis.com')) {
@@ -814,7 +838,7 @@ export const getArticles = async (): Promise<Article[]> => {
 
 export const getArticleBySlug = async (slug: string): Promise<Article | null> => {
     try {
-        // Query by slug
+        // First try query by slug
         const q = query(collection(db, 'articles'), where('slug', '==', slug), limit(1));
         const querySnapshot = await getDocs(q);
         
@@ -822,6 +846,18 @@ export const getArticleBySlug = async (slug: string): Promise<Article | null> =>
             const doc = querySnapshot.docs[0];
             return mapToAppArticle(doc.data(), doc.id);
         }
+
+        // If not found by slug, try by ID, safely catching invalid path errors
+        try {
+            const docRef = doc(db, 'articles', slug);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return mapToAppArticle(docSnap.data(), docSnap.id);
+            }
+        } catch (idError) {
+            // ignore invalid ID errors
+        }
+
         return null;
     } catch (error) {
         console.warn("Error getting article by slug:", error);

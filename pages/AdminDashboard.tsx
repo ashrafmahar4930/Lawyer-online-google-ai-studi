@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { VerificationRequest, Article, LawyerProfile, BloodAppeal, BloodDonor } from '../types';
 import * as db from '../services/mockDataService';
 import { generateArticle } from '../services/geminiService';
+import { auth } from '../services/firebase';
 import { compressImage } from '../utils/imageUtils'; // Import compressImage
 import { formatPhoneNumberForWhatsApp } from '../utils/phoneUtils';
 import { ClipboardCheck, Users as UsersIcon, FileText, Droplet, LayoutDashboard, CheckCircle, ShieldAlert, Filter, Sparkles, Coins, Globe } from 'lucide-react';
@@ -88,6 +89,8 @@ export default function AdminDashboard() {
   const [allowedDomains, setAllowedDomains] = useState('lawyeronline.live, lawyeronline.pk, build-ais-dev.run.app');
   const [activeLogoType, setActiveLogoType] = useState<'both' | 'logo-only' | 'badge-only'>('both');
   const [logoSaved, setLogoSaved] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('/logo.png');
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // Monetization & Google AdSense Setup States
   const [isAdSenseEnabled, setIsAdSenseEnabled] = useState(true);
@@ -118,18 +121,26 @@ export default function AdminDashboard() {
   }, []);
 
   const refreshData = async () => {
-    const [pendingReqs, allLawyers, activeAppeals, allReviewsData, registeredDonors] = await Promise.all([
+    const [pendingReqs, allLawyers, activeAppeals, allReviewsData, registeredDonors, branding] = await Promise.all([
       db.getPendingVerifications(),
       db.getAllLawyers(),
       db.getActiveBloodAppeals(),
       db.getAllReviews(),
-      db.getAllBloodDonors()
+      db.getAllBloodDonors(),
+      db.getSystemBranding()
     ]);
 
     setRequests(pendingReqs);
     setLawyers(allLawyers);
     setAppeals(activeAppeals);
     setAllDonors(registeredDonors);
+
+    if (branding) {
+       if (branding.logoText) setLogoText(branding.logoText);
+       if (branding.allowedDomains) setAllowedDomains(branding.allowedDomains);
+       if (branding.activeLogoType) setActiveLogoType(branding.activeLogoType);
+       if (branding.logoUrl) setLogoUrl(branding.logoUrl);
+    }
     
     // Enrich reviews with lawyer names
     const enrichedReviews = allReviewsData.map(review => {
@@ -413,6 +424,52 @@ export default function AdminDashboard() {
               }
           }
       });
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+          setIsUploadingLogo(true);
+          const userId = auth.currentUser?.uid || 'admin';
+          const newUrl = await db.uploadFile(file, `profile-pictures/${userId}/logo_${Date.now()}_${file.name}`);
+          setLogoUrl(newUrl);
+          await db.updateSystemBranding({ logoUrl: newUrl });
+          showToast("Logo uploaded successfully!", "success");
+          
+          // Small local storage fallback for rapid updates without DB reads across files if desired
+          localStorage.setItem('customBrandLogo', newUrl);
+          window.dispatchEvent(new Event('brand_logo_updated')); // Notify other components
+          
+          setLogoSaved(true);
+          setTimeout(() => setLogoSaved(false), 3000);
+      } catch (error) {
+          console.error("Error uploading logo:", error);
+          showToast("Failed to upload logo.", "error");
+      } finally {
+          setIsUploadingLogo(false);
+      }
+  };
+
+  const handleSaveBranding = async () => {
+      try {
+          await db.updateSystemBranding({
+              logoText,
+              allowedDomains,
+              activeLogoType
+          });
+          
+          // Save to local storage for quick cross-component access
+          localStorage.setItem('customBrandLogoText', logoText);
+          window.dispatchEvent(new Event('brand_logo_updated'));
+
+          setLogoSaved(true);
+          setTimeout(() => setLogoSaved(false), 3000);
+      } catch (error) {
+          console.error("Error saving branding settings:", error);
+          showToast("Failed to save brand settings.", "error");
+      }
   };
 
   const handleSendMessageSubmit = async (e: React.FormEvent) => {
@@ -1024,6 +1081,20 @@ export default function AdminDashboard() {
                                    </div>
 
                                    <div>
+                                       <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Custom Brand Logo</label>
+                                       <div className="flex items-center gap-4">
+                                            <div className="w-[60px] h-[60px] rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
+                                                <img src={logoUrl || "/logo.png"} alt="Current Logo" className="w-full h-full object-contain" />
+                                            </div>
+                                            <label className="flex-1 text-center bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 cursor-pointer px-4 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-600 transition-all shadow-sm flex items-center justify-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                                {isUploadingLogo ? "Uploading..." : "Upload New PNG/SVG Logo"}
+                                                <input type="file" className="hidden" accept="image/png, image/jpeg, image/svg+xml" onChange={handleLogoUpload} disabled={isUploadingLogo} />
+                                            </label>
+                                       </div>
+                                   </div>
+
+                                   <div>
                                        <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Allowed CORS Sandbox Domains (Separated by Comma)</label>
                                        <textarea 
                                            value={allowedDomains}
@@ -1056,10 +1127,7 @@ export default function AdminDashboard() {
                                </div>
 
                                <button 
-                                   onClick={() => {
-                                       setLogoSaved(true);
-                                       setTimeout(() => setLogoSaved(false), 3000);
-                                   }}
+                                   onClick={handleSaveBranding}
                                    className="w-full bg-blue-600 text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-750 transition shadow-lg shadow-blue-105"
                                >
                                    Apply Brand Parameters
@@ -1083,11 +1151,13 @@ export default function AdminDashboard() {
                                        <div className="flex items-center space-x-2">
                                            {/* Box logo symbol */}
                                            {(activeLogoType === 'both' || activeLogoType === 'logo-only') && (
-                                               <img 
-                                                  src="/logo.png" 
-                                                  alt="LawyerOnline Logo" 
-                                                  className="w-10 h-10 object-contain drop-shadow-sm"
-                                               />
+                                               <div className="flex items-center justify-center">
+                                                   <img 
+                                                      src={logoUrl || "/logo.png"} 
+                                                      alt="LawyerOnline Logo" 
+                                                      className="w-12 h-12 object-contain"
+                                                   />
+                                               </div>
                                            )}
                                            
                                            {/* Badge */}
