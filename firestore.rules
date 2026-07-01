@@ -19,6 +19,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // --- SYSTEM CONFIG ---
+    match /system/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
     // --- REVIEWS ---
     match /reviews/{reviewId} {
       allow get, list: if true;
@@ -108,7 +114,7 @@ service cloud.firestore {
     // --- LEGAL QUESTIONS ---
     match /questions/{questionId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.clientId == request.auth.uid;
+      allow create: if isAdmin() || (isSignedIn() && request.resource.data.clientId == request.auth.uid);
       allow update: if isAdmin() || (isSignedIn() && resource.data.clientId == request.auth.uid);
       allow delete: if isAdmin() || (isSignedIn() && resource.data.clientId == request.auth.uid);
     }
@@ -116,7 +122,7 @@ service cloud.firestore {
     // --- LEGAL ANSWERS ---
     match /answers/{answerId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.lawyerId == request.auth.uid;
+      allow create: if isAdmin() || (isSignedIn() && request.resource.data.lawyerId == request.auth.uid);
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.lawyerId == request.auth.uid);
     }
     

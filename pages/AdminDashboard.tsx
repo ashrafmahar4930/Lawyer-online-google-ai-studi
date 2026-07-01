@@ -8,10 +8,10 @@ import { generateArticle } from '../services/geminiService';
 import { auth } from '../services/firebase';
 import { compressImage } from '../utils/imageUtils'; // Import compressImage
 import { formatPhoneNumberForWhatsApp } from '../utils/phoneUtils';
-import { ClipboardCheck, Users as UsersIcon, FileText, Droplet, LayoutDashboard, CheckCircle, ShieldAlert, Filter, Sparkles, Coins, Globe } from 'lucide-react';
+import { ClipboardCheck, Users as UsersIcon, FileText, Droplet, LayoutDashboard, CheckCircle, ShieldAlert, Filter, Sparkles, Coins, Globe, MessageSquare } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'verifications' | 'articles' | 'users' | 'blood' | 'branding' | 'monetization' | 'reviews'>('verifications');
+  const [activeTab, setActiveTab] = useState<'verifications' | 'articles' | 'users' | 'blood' | 'branding' | 'monetization' | 'reviews' | 'qaseo'>('verifications');
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
     show: false,
     message: '',
@@ -114,6 +114,17 @@ export default function AdminDashboard() {
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const [isLoadingArticles, setIsLoadingArticles] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+
+  // Q&A SEO states
+  const [seoQaTitle, setSeoQaTitle] = useState('');
+  const [seoQaDesc, setSeoQaDesc] = useState('');
+  const [seoQaCategory, setSeoQaCategory] = useState('Family Law');
+  const [seoQaClientName, setSeoQaClientName] = useState('');
+  const [seoQaCountry, setSeoQaCountry] = useState('Pakistan');
+  const [seoQaAnswer, setSeoQaAnswer] = useState('');
+  const [seoQaLawyerName, setSeoQaLawyerName] = useState('Expert Advocate');
+  const [seoQaLawyerTitle, setSeoQaLawyerTitle] = useState('Senior Legal Consultant');
+  const [isSubmittingSeoQa, setIsSubmittingSeoQa] = useState(false);
 
   useEffect(() => {
     refreshData();
@@ -268,6 +279,36 @@ export default function AdminDashboard() {
               }
           }
       });
+  };
+
+  const handlePublishSeoQa = async () => {
+      if (!seoQaTitle || !seoQaDesc) {
+          showToast("Question title and description are required.", "error");
+          return;
+      }
+      setIsSubmittingSeoQa(true);
+      try {
+          await db.adminAddSEOQuestionAndAnswer(
+              seoQaTitle,
+              seoQaDesc,
+              seoQaCategory,
+              seoQaClientName,
+              seoQaCountry,
+              seoQaAnswer,
+              seoQaLawyerName,
+              seoQaLawyerTitle
+          );
+          showToast("SEO Q&A Thread Published Successfully!", "success");
+          setSeoQaTitle('');
+          setSeoQaDesc('');
+          setSeoQaAnswer('');
+          setSeoQaClientName('');
+      } catch (error) {
+          console.error("Failed to publish SEO Q&A", error);
+          showToast("Failed to publish Q&A.", "error");
+      } finally {
+          setIsSubmittingSeoQa(false);
+      }
   };
 
   const handleGenerateArticle = async () => {
@@ -541,6 +582,10 @@ export default function AdminDashboard() {
              <div className="flex items-center gap-3"><FileText className="w-5 h-5"/> Articles</div>
          </button>
 
+         <button onClick={() => setActiveTab('qaseo')} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl font-black text-sm transition-all ${activeTab === 'qaseo' ? 'bg-purple-600 text-white shadow-xl shadow-purple-200 translate-x-2' : 'bg-white text-slate-500 hover:bg-slate-50 border border-transparent'}`}>
+             <div className="flex items-center gap-3"><MessageSquare className="w-5 h-5"/> Q&A SEO Engine</div>
+         </button>
+
          <button onClick={() => setActiveTab('blood')} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl font-black text-sm transition-all ${activeTab === 'blood' ? 'bg-red-600 text-white shadow-xl shadow-red-200 translate-x-2' : 'bg-white text-slate-500 hover:bg-slate-50 border border-transparent'}`}>
              <div className="flex items-center gap-3"><Droplet className="w-5 h-5"/> Blood Desk</div>
              {appeals.length > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{appeals.length}</span>}
@@ -697,6 +742,82 @@ export default function AdminDashboard() {
                                   </div>
                               </div>
                           ))}
+                      </div>
+                  </div>
+              )}
+
+              {activeTab === 'qaseo' && (
+                  <div className="max-w-4xl mx-auto">
+                      <h2 className="text-2xl font-black mb-6">SEO Q&A Feeding Engine</h2>
+                      <p className="text-sm text-slate-500 mb-8">
+                        Manually insert highly optimized Legal Questions and Answers into the public forum to boost Google Search indexing (JSON-LD schema will be auto-generated on the QA page).
+                      </p>
+                      <div className="bg-slate-50 p-8 rounded-[2.5rem] mb-12 border border-slate-100 shadow-inner space-y-6">
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Category (Sub-Jurisdiction)</label>
+                                <select 
+                                  className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold"
+                                  value={seoQaCategory}
+                                  onChange={e => setSeoQaCategory(e.target.value)}
+                                >
+                                  <option value="Family Law">Family Law</option>
+                                  <option value="Corporate Law">Corporate Law</option>
+                                  <option value="Criminal Law">Criminal Law</option>
+                                  <option value="Civil Disputes">Civil Disputes</option>
+                                  <option value="Cyber Law & IT">Cyber Law & IT</option>
+                                  <option value="Taxation & Custom">Taxation & Custom</option>
+                                  <option value="Property & Rent">Property & Rent</option>
+                                  <option value="Intellectual Property">Intellectual Property</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Country</label>
+                                <input className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold" value={seoQaCountry} onChange={e => setSeoQaCountry(e.target.value)} placeholder="e.g. Pakistan, Global" />
+                            </div>
+                          </div>
+
+                          <div>
+                              <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">SEO Question Title</label>
+                              <input className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold" value={seoQaTitle} onChange={e => setSeoQaTitle(e.target.value)} placeholder="e.g. Can a landlord evict without notice in Sindh?" />
+                          </div>
+                          
+                          <div>
+                              <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Detailed Question (Client Context)</label>
+                              <textarea rows={3} className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold" value={seoQaDesc} onChange={e => setSeoQaDesc(e.target.value)} placeholder="Factual context of the client's query..." />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Mock Client Name</label>
+                                <input className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold" value={seoQaClientName} onChange={e => setSeoQaClientName(e.target.value)} placeholder="e.g. Anonymous, Ali K." />
+                            </div>
+                          </div>
+
+                          <div className="border-t border-slate-200 my-6 pt-6">
+                             <h3 className="font-black text-lg text-slate-800 mb-4">Official Expert Answer</h3>
+                             
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                <div>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Lawyer Name</label>
+                                    <input className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold" value={seoQaLawyerName} onChange={e => setSeoQaLawyerName(e.target.value)} placeholder="e.g. Advocate Muhammad" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Lawyer Title</label>
+                                    <input className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold" value={seoQaLawyerTitle} onChange={e => setSeoQaLawyerTitle(e.target.value)} placeholder="e.g. Senior High Court Advocate" />
+                                </div>
+                             </div>
+
+                             <div>
+                                <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Comprehensive Legal Answer</label>
+                                <textarea rows={6} className="w-full bg-white border-0 shadow-sm p-4 rounded-2xl font-bold" value={seoQaAnswer} onChange={e => setSeoQaAnswer(e.target.value)} placeholder="Provide the legal advice..." />
+                             </div>
+                          </div>
+
+                          <button onClick={handlePublishSeoQa} disabled={isSubmittingSeoQa} className="bg-purple-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-purple-100 disabled:opacity-50">
+                             {isSubmittingSeoQa ? 'Publishing...' : 'Inject into Live Q&A Forum'}
+                          </button>
                       </div>
                   </div>
               )}

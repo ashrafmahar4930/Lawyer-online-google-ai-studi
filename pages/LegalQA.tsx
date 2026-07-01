@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { 
   getLegalQuestions, 
   addLegalQuestion, 
@@ -1262,6 +1263,50 @@ export default function LegalQA() {
                 // --- Detailed Drilldown view ---
                 <div className="space-y-4 animate-in fade-in duration-200">
                   
+                  {/* JSON-LD Schema for SEO Q&A snippet */}
+                  <Helmet>
+                    <script type="application/ld+json">
+                      {JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "QAPage",
+                        "mainEntity": {
+                          "@type": "Question",
+                          "name": selectedQuestion.title,
+                          "text": selectedQuestion.description,
+                          "answerCount": selectedQuestion.answersCount || 0,
+                          "upvoteCount": (selectedQuestion.upvotes || 0) - (selectedQuestion.downvotes || 0),
+                          "dateCreated": selectedQuestion.createdAt || new Date().toISOString(),
+                          "author": {
+                            "@type": "Person",
+                            "name": selectedQuestion.clientName
+                          },
+                          "acceptedAnswer": currentAnswers.length > 0 ? {
+                            "@type": "Answer",
+                            "text": currentAnswers[0].content,
+                            "upvoteCount": (currentAnswers[0].upvotes || 0) - (currentAnswers[0].downvotes || 0),
+                            "dateCreated": currentAnswers[0].createdAt || new Date().toISOString(),
+                            "url": window.location.href,
+                            "author": {
+                              "@type": "Person",
+                              "name": currentAnswers[0].lawyerName
+                            }
+                          } : undefined,
+                          "suggestedAnswer": currentAnswers.slice(1).map(a => ({
+                            "@type": "Answer",
+                            "text": a.content,
+                            "upvoteCount": (a.upvotes || 0) - (a.downvotes || 0),
+                            "dateCreated": a.createdAt || new Date().toISOString(),
+                            "url": window.location.href,
+                            "author": {
+                              "@type": "Person",
+                              "name": a.lawyerName
+                            }
+                          }))
+                        }
+                      })}
+                    </script>
+                  </Helmet>
+
                   {/* Return tab link */}
                   <button 
                     onClick={() => setSelectedQuestion(null)}

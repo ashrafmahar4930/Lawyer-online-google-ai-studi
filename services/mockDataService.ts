@@ -1335,6 +1335,58 @@ export const getAllReviews = async (): Promise<Review[]> => {
 
 // --- Ask Legal Questions Q&A Community System (For SEO & Public Content) ---
 
+export const adminAddSEOQuestionAndAnswer = async (
+  title: string, 
+  description: string, 
+  category: string, 
+  clientName: string, 
+  country: string,
+  answerContent: string,
+  lawyerName: string,
+  lawyerTitle: string
+) => {
+  const qId = `question_${Date.now()}`;
+  
+  try {
+    const newQuestion: LegalQuestion = {
+      id: qId,
+      title,
+      description,
+      clientId: 'seo-admin-generated',
+      clientName: clientName || 'Anonymous',
+      category,
+      country: country || 'Global',
+      createdAt: new Date().toISOString(),
+      answersCount: answerContent ? 1 : 0,
+      views: Math.floor(150 + Math.random() * 500), 
+      upvotes: Math.floor(10 + Math.random() * 50),
+      downvotes: Math.floor(Math.random() * 3)
+    };
+    await setDoc(doc(db, 'questions', qId), newQuestion);
+
+    if (answerContent) {
+      const aId = `answer_${Date.now()}`;
+      const newAnswer: LegalAnswer = {
+        id: aId,
+        questionId: qId,
+        content: answerContent,
+        lawyerId: 'seo-expert-lawyer',
+        lawyerName: lawyerName || 'Expert Advocate',
+        lawyerTitle: lawyerTitle || 'Senior Legal Consultant',
+        createdAt: new Date().toISOString(),
+        upvotes: Math.floor(5 + Math.random() * 20),
+        downvotes: 0
+      };
+      await setDoc(doc(db, 'answers', aId), newAnswer);
+    }
+    
+    return qId;
+  } catch (error) {
+    console.error("Error adding SEO Q&A", error);
+    throw error;
+  }
+};
+
 export const addLegalQuestion = async (title: string, description: string, category: string, clientName: string) => {
   const qId = `question_${Date.now()}`;
   const path = `questions/${qId}`;
