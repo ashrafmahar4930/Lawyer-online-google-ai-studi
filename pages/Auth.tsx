@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
 import { auth, googleProvider } from '../services/firebase';
 import { setUserRole, getLawyerProfile } from '../services/mockDataService';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, signInWithPopup, getRedirectResult, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '../App'; // Import useAuth to listen to global auth state
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -157,17 +157,34 @@ export default function Auth({ isLogin }: AuthProps) {
 
     setLoading(true);
     try {
-      // If on Signup page, we can try to save the intended role to local storage so we have it after redirect
-      if (!isLogin && role) {
-          localStorage.setItem('intended_signup_role', role);
+      // Use popup for a seamless, fast experience on direct browsers
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result && result.user) {
+        const user = result.user;
+        const savedRole = !isLogin ? role : '';
+        if (savedRole) {
+          await setUserRole(user.uid, savedRole as UserRole, user.email || '', user.displayName || undefined);
+        }
+        setSuccessMessage('Google Sign-In successful!');
       }
-      
-      // Use redirect instead of popup for better mobile support
-      await signInWithRedirect(auth, googleProvider);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Google Sign-In failed to start');
-      setLoading(false);
+      console.error("Google Popup Sign-In Error:", err);
+      // Fallback to redirect if popup is blocked (e.g., inside an iframe or some in-app webviews)
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user' || err.message?.includes('popup')) {
+        try {
+          if (!isLogin && role) {
+              localStorage.setItem('intended_signup_role', role);
+          }
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectErr: any) {
+          console.error("Fallback Redirect Sign-In Error:", redirectErr);
+          setError(redirectErr.message || 'Google Sign-In failed');
+          setLoading(false);
+        }
+      } else {
+        setError(err.message || 'Google Sign-In failed');
+        setLoading(false);
+      }
     }
   };
 
