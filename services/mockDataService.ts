@@ -51,8 +51,12 @@ export const deleteFile = async (fileUrl: string) => {
     const fileRef = storageRef(storage as any, path);
     await deleteObject(fileRef);
     console.log("Old file deleted:", fileUrl);
-  } catch (error) {
-    logService.error("Error deleting old file", error, 'Storage');
+  } catch (error: any) {
+    if (error?.code === 'storage/unauthorized') {
+      console.warn("Storage warning: Could not delete old file due to permission constraints (storage/unauthorized). Proceeding with upload.", fileUrl);
+    } else {
+      logService.error("Error deleting old file", error, 'Storage');
+    }
     // Don't throw, as the new upload should still proceed even if old file deletion fails.
   }
 };

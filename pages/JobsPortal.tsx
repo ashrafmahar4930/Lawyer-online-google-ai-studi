@@ -1,69 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, Briefcase, Globe2, MapPin, Search, Building2, MapPin as MapPinIcon, Clock } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { ExternalLink, Briefcase, Globe2, MapPin, Search, Building2, MapPin as MapPinIcon, Clock, AlertCircle } from 'lucide-react';
 import { getAuthorities } from '../services/mockDataService';
 
 const JOB_REGIONS = [
   {
-    region: 'North America',
+    region: 'Pakistan',
     sites: [
-      { id: 'usajobs', name: 'USAJOBS (Federal)', url: 'https://www.usajobs.gov/' },
-      { id: 'uscourts', name: 'US Courts Careers', url: 'https://www.uscourts.gov/careers' },
-      { id: 'ny-courts', name: 'NY State Courts Jobs', url: 'https://ww2.nycourts.gov/careers/index.shtml' },
+      { id: 'fpsc-pk', name: 'Federal Public Service Commission (FPSC)', url: 'https://www.fpsc.gov.pk/' },
+      { id: 'ppsc-pk', name: 'Punjab Public Service Commission (PPSC)', url: 'https://www.ppsc.gop.pk/' },
+      { id: 'supreme-court-pk', name: 'Supreme Court of Pakistan', url: 'https://www.supremecourt.gov.pk/careers/' },
+      { id: 'rozee-pk-legal', name: 'Rozee.pk - Legal Jobs', url: 'https://www.rozee.pk/job/search/legal' }
     ]
   },
   {
-    region: 'United Kingdom & Europe',
+    region: 'India',
+    sites: [
+      { id: 'upsc-in', name: 'Union Public Service Commission (UPSC)', url: 'https://upsc.gov.in/' },
+      { id: 'sci-in', name: 'Supreme Court of India', url: 'https://main.sci.gov.in/recruitment' },
+      { id: 'naukri-legal', name: 'Naukri - Legal Jobs', url: 'https://www.naukri.com/legal-jobs' }
+    ]
+  },
+  {
+    region: 'United Kingdom',
     sites: [
       { id: 'civil-service', name: 'Civil Service Jobs', url: 'https://www.civilservicejobs.service.gov.uk/' },
       { id: 'judiciary-uk', name: 'UK Judiciary Careers', url: 'https://www.judiciary.uk/about-the-judiciary/diversity/judicial-careers/' },
-      { id: 'icc', name: 'International Criminal Court', url: 'https://www.icc-cpi.int/jobs' },
+      { id: 'law-society-uk', name: 'The Law Society Jobs', url: 'https://jobs.lawsociety.org.uk/' }
+    ]
+  },
+  {
+    region: 'North America (USA & Canada)',
+    sites: [
+      { id: 'usajobs', name: 'USAJOBS (Federal)', url: 'https://www.usajobs.gov/' },
+      { id: 'uscourts', name: 'US Courts Careers', url: 'https://www.uscourts.gov/careers' },
+      { id: 'canada-jobs', name: 'Government of Canada Jobs', url: 'https://www.canada.ca/en/services/jobs/opportunities/government.html' }
+    ]
+  },
+  {
+    region: 'Australia & New Zealand',
+    sites: [
+      { id: 'aps-au', name: 'Australian Public Service Jobs', url: 'https://www.apsjobs.gov.au/' },
+      { id: 'law-council-au', name: 'Law Council of Australia', url: 'https://lawcouncil.au/about-us/careers' },
+      { id: 'careers-nz', name: 'New Zealand Government Jobs', url: 'https://jobs.govt.nz/' }
+    ]
+  },
+  {
+    region: 'Middle East',
+    sites: [
+      { id: 'dubai-careers', name: 'Dubai Careers', url: 'https://dubaicareers.ae/' },
+      { id: 'bayt-legal', name: 'Bayt - Legal Jobs in Middle East', url: 'https://www.bayt.com/en/international/jobs/roles/legal/' }
     ]
   },
   {
     region: 'International & Global',
     sites: [
       { id: 'un-jobs', name: 'United Nations Careers', url: 'https://careers.un.org/' },
-      { id: 'world-bank', name: 'World Bank Legal', url: 'https://www.worldbank.org/en/about/careers' },
+      { id: 'world-bank', name: 'World Bank Legal Careers', url: 'https://www.worldbank.org/en/about/careers' },
+      { id: 'icc', name: 'International Criminal Court', url: 'https://www.icc-cpi.int/jobs' }
     ]
   }
 ];
 
-const MOCK_PLATFORM_JOBS = [
-  {
-    id: 1,
-    title: 'Junior Legal Associate',
-    lawFirm: 'Global Partners LLC',
-    location: 'London, UK',
-    type: 'Full-Time',
-    postedAt: '2 days ago',
-    salary: '£40,000 - £50,000 / year',
-    description: 'We are looking for a motivated junior associate to assist with civil litigation research and drafting.'
-  },
-  {
-    id: 2,
-    title: 'Corporate Lawyer',
-    lawFirm: 'TechLegal Solutions',
-    location: 'Remote',
-    type: 'Contract',
-    postedAt: '5 days ago',
-    salary: '$80,000 / year',
-    description: 'Seeking an experienced corporate lawyer for reviewing tech agreements and ensuring compliance.'
-  },
-  {
-    id: 3,
-    title: 'Paralegal / Legal Assistant',
-    lawFirm: 'Justice Advocates',
-    location: 'New York, USA',
-    type: 'Part-Time',
-    postedAt: '1 week ago',
-    salary: '$35 / hour',
-    description: 'Assisting senior advocates with case filing, document organization, and managing client schedules.'
-  }
-];
+const PLATFORM_JOBS: any[] = [];
 
 export default function JobsPortal() {
   const [activeTab, setActiveTab] = useState<'platform' | 'official'>('platform');
-  const [activeRegion, setActiveRegion] = useState('Global');
+  const [activeRegion, setActiveRegion] = useState('Pakistan');
   const [searchQuery, setSearchQuery] = useState('');
   const [authorities, setAuthorities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -88,7 +91,7 @@ export default function JobsPortal() {
     }
   }, [activeTab]);
 
-  const filteredPlatformJobs = MOCK_PLATFORM_JOBS.filter(job => 
+  const filteredPlatformJobs = PLATFORM_JOBS.filter(job => 
     job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     job.lawFirm.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -105,20 +108,48 @@ export default function JobsPortal() {
   const displayRegions = regions.length > 0 ? regions : JOB_REGIONS.map(r => r.region);
   
   useEffect(() => {
-    if (regions.length > 0 && activeRegion === 'Global') {
+    if (regions.length > 0 && activeRegion === 'Pakistan') {
       setActiveRegion(regions[0]);
     }
   }, [regions]);
 
+  const seoSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Global Legal Job Portals",
+    "description": "Your centralized gateway to discover legal career opportunities worldwide. Browse official government, judicial, and international career portals.",
+    "url": "https://lawyeronline.pk/jobs",
+    "mainEntity": {
+      "@type": "ItemList",
+      "itemListElement": JOB_REGIONS.flatMap((region, rIdx) => 
+        region.sites.map((site, sIdx) => ({
+          "@type": "ListItem",
+          "position": rIdx * 100 + sIdx + 1,
+          "name": site.name,
+          "url": site.url
+        }))
+      )
+    }
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl animate-in fade-in zoom-in-95 duration-500">
+    <>
+      <Helmet>
+        <title>Global Legal Job Portals - Find Lawyer Jobs Worldwide | LawyerOnline</title>
+        <meta name="description" content="Your centralized gateway to discover legal career opportunities worldwide. Browse official government, judicial, and international career portals." />
+        <meta name="keywords" content="legal jobs, lawyer jobs, international court careers, federal jobs, supreme court jobs, legal careers, advocate jobs" />
+        <script type="application/ld+json">
+          {JSON.stringify(seoSchema)}
+        </script>
+      </Helmet>
+      <div className="container mx-auto px-4 py-8 max-w-6xl animate-in fade-in zoom-in-95 duration-500">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3">
-          <Briefcase className="w-8 h-8 text-blue-600" />
-          Careers & Jobs
+          <Globe2 className="w-8 h-8 text-blue-600" />
+          Global Legal Job Portals
         </h1>
         <p className="text-slate-600 mt-2 text-lg">
-          Find legal opportunities posted by our community, or browse official government career portals.
+          Your centralized gateway to discover legal career opportunities worldwide. Browse official government, judicial, and international career portals.
         </p>
       </div>
 
@@ -161,8 +192,21 @@ export default function JobsPortal() {
 
           <div className="flex flex-col gap-4">
             {filteredPlatformJobs.length === 0 ? (
-              <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
-                <p className="text-slate-500 font-medium">No platform jobs found matching your search.</p>
+              <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Briefcase className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">No Direct Openings Currently</h3>
+                <p className="text-slate-500 max-w-md mx-auto mb-6">
+                  There are no jobs posted directly on our platform right now. However, you can explore thousands of legal opportunities through official portals worldwide.
+                </p>
+                <button 
+                  onClick={() => setActiveTab('official')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex items-center gap-2 mx-auto"
+                >
+                  <Globe2 className="w-5 h-5" />
+                  Explore Official Portals
+                </button>
               </div>
             ) : (
               filteredPlatformJobs.map((job) => (
@@ -272,5 +316,6 @@ export default function JobsPortal() {
         </div>
       )}
     </div>
+    </>
   );
 }

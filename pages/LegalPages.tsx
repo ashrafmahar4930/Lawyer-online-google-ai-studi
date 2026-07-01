@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { CheckCircle2, PenTool } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 
 // Fix: Make children optional in type definition to prevent TS error about missing children prop
@@ -20,120 +21,313 @@ const LegalLayout = ({ title, children }: { title: string, children?: React.Reac
 };
 
 export const PrivacyPolicy = () => {
+  const [activeTab, setActiveTab] = React.useState<'general' | 'lawyers' | 'clients' | 'donors'>('general');
+
   return (
     <LegalLayout title="Privacy Policy">
-      <p className="mb-4">Last Updated: {new Date().toLocaleDateString('en-GB')}</p>
+      <p className="mb-6">Last Updated: {new Date().toLocaleDateString('en-GB')}</p>
       
-      <h3 className="text-xl font-bold mt-6 mb-3">1. Introduction</h3>
-      <p>Welcome to <BrandLogo />. Because our platform connects citizens with legal professionals (Advocates) globally, we take your privacy and data security very seriously. This policy explains the difference between the public information we show and the private information we securely hold.</p>
+      <p className="mb-8">
+        Welcome to <BrandLogo />. This policy explains what information we collect, how we use it, and how we protect it. 
+        Because our platform serves different types of users, we have separated our privacy guidelines to ensure absolute clarity.
+      </p>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">2. Information We Collect from Lawyers (Advocates)</h3>
-      <p>To ensure our platform remains secure and fraud-free, we require specific verification data from lawyers. This data is split into two categories:</p>
-      <ul className="list-disc ml-6 mb-4 space-y-2">
-        <li><strong>Private Data (Kept Secure & Hidden):</strong> We collect your National Identity Card or Passport number, state/national Bar Council License Number, Court Enrollment Year, University Roll Number (for degree validation), personal email, and private mobile numbers. <strong>This information is never sold or displayed publicly.</strong> It is used strictly by our team to verify your identity on online Bar Council and University portals.</li>
-        <li><strong>Public Data (Displayed to Users):</strong> To help you get clients, we display your Name, Chamber Address, Practicing City/Court, Profile Picture, Specialties, and generic contact methods upon your approval.</li>
-      </ul>
+      <div className="flex flex-wrap border-b border-slate-200 mb-6 gap-2">
+        {(['general', 'lawyers', 'clients', 'donors'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 font-semibold capitalize rounded-t-lg transition-colors ${
+              activeTab === tab 
+                ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' 
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            {tab === 'general' ? 'General Policy' : `For ${tab}`}
+          </button>
+        ))}
+      </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">3. Information We Collect from Users/Clients</h3>
-      <ul className="list-disc ml-6 mb-4 space-y-2">
-        <li><strong>Account Details:</strong> Name, Email, and Phone number to facilitate your booking and communication with lawyers.</li>
-        <li><strong>Case Information:</strong> Information you share in the Q&A section or direct messages. (Note: Please do not share highly sensitive ID or financial details publicly in the Q&A forum).</li>
-      </ul>
+      <div className="animate-in fade-in duration-300">
+        {activeTab === 'general' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-slate-800">General Privacy Guidelines</h3>
+            
+            <div>
+              <h4 className="text-xl font-bold mb-2">1. Data Security & Encryption</h4>
+              <p>We use industry-standard encryption protocols to protect all data transmitted between your device and our servers. We do not sell your personal data to any third-party marketing companies.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">4. Blood Donation Directory</h3>
-      <p>If you optionally choose to register as a Blood Donor, your Name, Blood Group, City, and Phone Number will be displayed publicly in the Emergency Blood Donation portal to help those in medical emergencies. You can remove yourself from this directory at any time from your dashboard.</p>
+            <div>
+              <h4 className="text-xl font-bold mb-2">2. Cookies & Local Storage</h4>
+              <p>We use cookies and local storage to keep you logged in across sessions and to remember your preferences. We may also use standard analytics tools to monitor website performance and improve user experience.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">5. How We Use and Protect Your Data</h3>
-      <p>We use your personal data strictly to connect you with legal professionals, verify the authenticity of users, facilitate emergency blood donations, and maintain our platform's security. We use industry-standard encryption. We do not sell your data to any third-party marketing companies.</p>
+            <div>
+              <h4 className="text-xl font-bold mb-2">3. Legal Compliance</h4>
+              <p>We may disclose your information if required to do so by law, or in response to a valid request from law enforcement or government authorities (e.g., cybercrime investigations related to fraud).</p>
+            </div>
+            
+            <div>
+              <h4 className="text-xl font-bold mb-2">4. Contact Us</h4>
+              <p>If you have any questions about this privacy policy, or wish to request data deletion, please contact us at adittamahar@gmail.com.</p>
+            </div>
+          </div>
+        )}
 
-      <h3 className="text-xl font-bold mt-6 mb-3">6. Verification Workflow & Data Auto-Deletion</h3>
-      <p>We actively utilize publicly available government and university verification portals (such as the Bar Council directories) to cross-check the ID and License Numbers provided by lawyers. <strong>Important Security Protocol:</strong> Once a lawyer's profile is successfully verified and approved by our administration, highly sensitive verification documents (like ID numbers and exact roll numbers) are automatically flagged for deletion from our active database. We only retain the "Verified Status" flag to protect our advocates from data breaches.</p>
+        {activeTab === 'lawyers' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-slate-800">Privacy Policy for Lawyers (Advocates)</h3>
+            
+            <div>
+              <h4 className="text-xl font-bold mb-2">1. Private Data (Strictly Confidential)</h4>
+              <p>To ensure our platform remains secure and fraud-free, we require specific verification data. We collect your National Identity Card (CNIC) or Passport number, state/national Bar Council License Number, Court Enrollment Year, University Roll Number, personal email, and private mobile numbers.</p>
+              <p className="mt-2 text-blue-700 font-semibold bg-blue-50 p-3 rounded-lg border border-blue-100">
+                This private information is never sold or displayed publicly. It is used strictly by our administrative team to verify your identity on online Bar Council and University portals.
+              </p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">7. Video/Audio Meetings and Attorney-Client Privilege</h3>
-      <p>To preserve absolute Attorney-Client privilege and confidentiality, LawyerOnline <strong>does not record, monitor, or store</strong> any audio or video data from private consultation meetings hosted through our platform. All discussions in these rooms are strictly confidential between the client and the advocate.</p>
+            <div>
+              <h4 className="text-xl font-bold mb-2">2. Public Data (Displayed to Users)</h4>
+              <p>To help you acquire clients, we display your Name, Chamber Address, Practicing City/Court, Profile Picture, Specialties, and generic contact methods upon your approval.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">8. Account Deletion and Data Removal</h3>
-      <p>You have the absolute right to delete your account and profile data from our platform at any time. Both Clients and Advocates can go to their <strong>Dashboard &gt; Settings</strong> and click on <strong>"Delete My Account"</strong>. This action is irreversible and permanently removes your profile, personal data, and listings from our active servers.</p>
+            <div>
+              <h4 className="text-xl font-bold mb-2">3. Verification & Auto-Deletion Protocol</h4>
+              <p>Once your profile is successfully verified by our administration, highly sensitive verification documents (like ID numbers and exact roll numbers) are flagged and securely managed. We only retain the "Verified Status" to protect you from data breaches.</p>
+            </div>
+          </div>
+        )}
 
-      <h3 className="text-xl font-bold mt-6 mb-3">9. Cookies, Local Storage, and Analytics</h3>
-      <p>We use cookies and local storage to distinguish you from other users and keep you logged in across different browsers and sessions. We may also use services like Google Analytics and Google AdSense to display advertisements, which use tracking mechanisms to serve personalized ads based on your visit history across the web.</p>
+        {activeTab === 'clients' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-slate-800">Privacy Policy for Clients (Citizens)</h3>
+            
+            <div>
+              <h4 className="text-xl font-bold mb-2">1. Information We Collect</h4>
+              <ul className="list-disc ml-6 space-y-2">
+                <li><strong>Account Details:</strong> Name, Email, and Phone number to facilitate your booking and communication with lawyers.</li>
+                <li><strong>Case Information:</strong> Information you voluntarily share in the Q&A section or in direct messages with lawyers.</li>
+              </ul>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">10. Device Permissions (Location & Notifications)</h3>
-      <ul className="list-disc ml-6 mb-4 space-y-2">
-        <li><strong>Location Services:</strong> We may request access to your device's geolocation to help you find nearby lawyers or to verify the city for Blood Donation requests. You can deny this permission in your browser or device settings at any time, though some location-based features may not function optimally.</li>
-        <li><strong>Push Notifications & Alerts:</strong> With your consent, we send browser notifications (e.g., for case hearing updates, new messages, or emergency blood requests). You can manage or revoke these notification permissions directly from your browser settings.</li>
-      </ul>
+            <div>
+              <h4 className="text-xl font-bold mb-2">2. Q&A Forum Anonymity</h4>
+              <p>When you post a question in the public Q&A forum, please do not share highly sensitive ID, financial, or specific case details. If you wish to remain anonymous, you can use a generic display name in your profile settings.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">11. Contact Us</h3>
-      <p>If you have any questions about this privacy policy, please contact us at adittamahar@gmail.com.</p>
+            <div>
+              <h4 className="text-xl font-bold mb-2">3. Absolute Attorney-Client Privilege</h4>
+              <p>To preserve absolute confidentiality, LawyerOnline <strong>does not record, monitor, or store</strong> any audio or video data from private consultation meetings hosted through our platform. All discussions are strictly between you and the advocate.</p>
+            </div>
+
+            <div>
+              <h4 className="text-xl font-bold mb-2">4. Right to Deletion</h4>
+              <p>You have the absolute right to delete your account and profile data at any time from your Dashboard Settings. This action permanently removes your personal data from our active servers.</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'donors' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-slate-800">Privacy Policy for Blood Donors</h3>
+            
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-red-900">
+              <strong>Your Privacy is our Priority:</strong> We do NOT publicly display your WhatsApp number, and we do NOT share it with patients or anyone else on the platform.
+            </div>
+
+            <div>
+              <h4 className="text-xl font-bold mb-2">1. Minimal Data Collection</h4>
+              <p>When you register as a blood donor, we collect only the absolute minimum information required: <strong>Your Name, WhatsApp Number, Country, City, and Blood Group</strong>. We do NOT require an email address, and we do NOT create a complex user account for you.</p>
+            </div>
+
+            <div>
+              <h4 className="text-xl font-bold mb-2">2. How the Donation Flow Works</h4>
+              <ul className="list-disc ml-6 space-y-2">
+                <li>When someone in need creates an appeal for blood, the appeal is routed to our administrative team.</li>
+                <li>Our administration filters the database to find donors matching the required blood group and city.</li>
+                <li>Our administration then sends a pre-formatted WhatsApp message containing the patient's appeal to your WhatsApp number using an automated link.</li>
+                <li><strong>Your Choice:</strong> You have the complete freedom to review the appeal and decide whether you want to contact the patient. If you choose to help, you contact them directly. If not, you simply ignore the message.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xl font-bold mb-2">3. Current Limitations on Donor Deletion & Verification</h4>
+              <p>Because we do not require donors to create standard login accounts with passwords (to keep the process fast and frictionless), there is currently no automated way for a donor to log in and delete their own record.</p>
+              <p className="mt-2"><strong>How to remove yourself:</strong> If you wish to be removed from the blood donor registry, you can simply reply to any WhatsApp message you receive from our admin, or contact us directly, and we will manually delete your record immediately.</p>
+            </div>
+          </div>
+        )}
+      </div>
     </LegalLayout>
   );
 };
 
 export const TermsOfService = () => {
+  const [activeTab, setActiveTab] = React.useState<'general' | 'lawyers' | 'clients'>('general');
+  const [isSigned, setIsSigned] = React.useState(false);
+  const [signatureName, setSignatureName] = React.useState('');
+  const [signatureDate, setSignatureDate] = React.useState<Date | null>(null);
+
+  const handleSign = () => {
+    if (signatureName.trim().length < 3) {
+      alert("Please enter your full legal name to sign.");
+      return;
+    }
+    setIsSigned(true);
+    setSignatureDate(new Date());
+  };
+
   return (
     <LegalLayout title="Terms of Service & Conditions">
       <p className="mb-4">Last Updated: {new Date().toLocaleDateString('en-GB')}</p>
+
+      <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6">
+        <p className="text-amber-900 font-bold mb-1">Difference Between Privacy Policy & Terms of Service:</p>
+        <p className="text-amber-800 text-sm">
+          Our <strong>Privacy Policy</strong> explains <em>what personal data we collect</em> and <em>how we protect it</em>. 
+          Our <strong>Terms of Service</strong> act as a legal contract explaining the <em>rules, liabilities, and obligations</em> you must follow when using our platform. By registering or using our services, you digitally agree to these terms.
+        </p>
+      </div>
 
       <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
         <p className="text-red-800 font-bold mb-1">IMPORTANT LEGAL DISCLAIMER:</p>
         <p className="text-red-700 text-sm">LawyerOnline.live is strictly a technology platform and directory. We are NOT a law firm, we DO NOT provide legal advice, and we DO NOT guarantee the outcome of any legal case. By using this platform, you agree to hold the founders and management completely harmless from any legal or financial liability.</p>
       </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">1. Minimum Age Requirement</h3>
-      <p>You must be at least 18 years old to create an account, seek legal counsel, or interact with advocates on this platform. By using LawyerOnline.live, you represent and warrant that you are of legal age to form a binding contract.</p>
+      <div className="flex flex-wrap border-b border-slate-200 mb-6 gap-2">
+        {(['general', 'lawyers', 'clients'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 font-semibold capitalize rounded-t-lg transition-colors ${
+              activeTab === tab 
+                ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' 
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            {tab === 'general' ? 'General Terms' : `Terms for ${tab}`}
+          </button>
+        ))}
+      </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">2. Nature of the Platform</h3>
-      <p><BrandLogo /> acts solely as a bridge connecting the public with independent legal professionals globally. We do not participate in your legal representation. Any agreement, payment, or legal strategy discussed between you and the lawyer is entirely between you and the independent lawyer.</p>
+      <div className="animate-in fade-in duration-300">
+        {activeTab === 'general' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-bold mb-2">1. Minimum Age Requirement</h3>
+              <p>You must be at least 18 years old to create an account, seek legal counsel, or interact with advocates on this platform. By using LawyerOnline.live, you represent and warrant that you are of legal age to form a binding contract.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">3. Limitation of Liability and Non-Responsibility</h3>
-      <p>Under no circumstances, including negligence, shall the founders, owners (Allah Ditta Mahar, Rana Khurram Shahzad), or administrators of <BrandLogo /> be liable for any direct, indirect, incidental, or consequential damages. This includes, but is not limited to:</p>
-      <ul className="list-disc ml-6 mb-4 space-y-2">
-        <li>Loss of a court case or legal battle.</li>
-        <li>Financial losses, fines, or penalties imposed by any court or authority.</li>
-        <li>Poor or incorrect legal advice provided by any lawyer found on this platform.</li>
-        <li>Payment disputes, fee refunds, or unrendered services by the lawyer.</li>
-      </ul>
+            <div>
+              <h3 className="text-xl font-bold mb-2">2. Nature of the Platform</h3>
+              <p><BrandLogo /> acts solely as a bridge connecting the public with independent legal professionals globally. We do not participate in your legal representation. Any agreement, payment, or legal strategy discussed between you and the lawyer is entirely between you and the independent lawyer.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">4. Verification Limitations</h3>
-      <p>While <BrandLogo /> makes reasonable efforts to verify checking the National ID, Bar Council License numbers, and University Degrees of the lawyers joining our platform, we cannot 100% guarantee the absolute continuous standing of any lawyer. Licenses can be suspended by Bar Councils at any time. It is the user’s ultimate responsibility to perform their own due diligence before hiring and paying any legal professional.</p>
+            <div>
+              <h3 className="text-xl font-bold mb-2">3. Limitation of Liability and Non-Responsibility</h3>
+              <p>Under no circumstances, including negligence, shall the founders, owners, or administrators of <BrandLogo /> be liable for any direct, indirect, incidental, or consequential damages. This includes, but is not limited to:</p>
+              <ul className="list-disc ml-6 mt-2 space-y-1">
+                <li>Loss of a court case or legal battle.</li>
+                <li>Financial losses, fines, or penalties imposed by any court or authority.</li>
+                <li>Poor or incorrect legal advice provided by any lawyer found on this platform.</li>
+                <li>Payment disputes, fee refunds, or unrendered services by the lawyer.</li>
+              </ul>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">5. Rules for Clients (Citizens)</h3>
-      <ul className="list-disc ml-6 mb-4 space-y-2">
-        <li><strong>Respectful Communication:</strong> You must communicate respectfully with advocates. Abusive language will result in an immediate permanent ban.</li>
-        <li><strong>Direct Payments:</strong> You pay the lawyer directly for their services. LawyerOnline does not hold escrow or facilitate lawyer-client fee transfers. We are not responsible for refunds.</li>
-        <li><strong>Q&A Forum Rules:</strong> Do not post personal, sensitive, or identifiable information (like ID numbers, exact addresses, or banking details) in the public Q&A sections. Ask generic legal questions.</li>
-        <li><strong>Anonymity:</strong> If you post a question in the Q&A section, your display name will be public. If you wish to remain anonymous, please use a generic display name in your profile settings.</li>
-        <li><strong>Verification is Not a Guarantee:</strong> Our verified badge means we checked their credentials at the time of signup. You are still responsible for assessing the lawyer's competence and current standing before paying them.</li>
-      </ul>
+            <div>
+              <h3 className="text-xl font-bold mb-2">4. Digital Signatures and Acceptance</h3>
+              <p>When you register an account, submit a blood donation form, or book a consultation, you are digitally accepting these Terms of Service. This electronic acceptance carries the same legal weight as a physical signature.</p>
+            </div>
+          </div>
+        )}
 
-      <h3 className="text-xl font-bold mt-6 mb-3">6. Rules for Advocates (Lawyers)</h3>
-      <ul className="list-disc ml-6 mb-4 space-y-2">
-        <li><strong>Absolute Truthfulness:</strong> You agree to provide 100% accurate information regarding your Bar Council registration, degrees, and identity. Submitting fake licenses or misrepresenting your court level is a strict violation.</li>
-        <li><strong>Profile Updates Trigger Re-Verification:</strong> For security reasons, if you edit critical fields in your profile (such as your Name, Bar Council Number, or Practice City), your profile will automatically revert to "Unverified" status until our administration reviews and approves the new details.</li>
-        <li><strong>Professional Conduct:</strong> You must maintain the highest standards of professional ethics as prescribed by your local or national Bar Council. We reserve the right to suspend any advocate reported for fraud or severe professional misconduct.</li>
-      </ul>
+        {activeTab === 'clients' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-bold mb-2">1. Client Obligations & Conduct</h3>
+              <ul className="list-disc ml-6 space-y-2">
+                <li><strong>Respectful Communication:</strong> You must communicate respectfully with advocates. Abusive language will result in an immediate permanent ban.</li>
+                <li><strong>Direct Payments:</strong> You pay the lawyer directly for their services. LawyerOnline does not hold escrow or facilitate lawyer-client fee transfers. We are not responsible for refunds.</li>
+                <li><strong>Q&A Forum Rules:</strong> Do not post personal, sensitive, or identifiable information (like ID numbers, exact addresses, or banking details) in the public Q&A sections. Ask generic legal questions.</li>
+              </ul>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">7. Q&A and Direct Messaging Policy</h3>
-      <p>The public Q&A platform is for educational and general guidance only. Answers provided by lawyers do NOT constitute a formal Attorney-Client relationship. For confidential and specific advice, you must book a private direct consultation (via WhatsApp, Phone Call, or Video Meeting) with the lawyer.</p>
+            <div>
+              <h3 className="text-xl font-bold mb-2">2. Verification is Not a Guarantee</h3>
+              <p>While we make reasonable efforts to verify checking the National ID and Bar Council License numbers, we cannot 100% guarantee the absolute continuous standing of any lawyer. Licenses can be suspended by Bar Councils at any time. It is your ultimate responsibility to perform your own due diligence before hiring and paying any legal professional.</p>
+            </div>
+          </div>
+        )}
 
-      <h3 className="text-xl font-bold mt-6 mb-3">8. Reporting Suspicious Profiles & Fraud</h3>
-      <p>We rely on community vigilance to keep LawyerOnline completely secure. If you encounter a profile that appears fake, a person who is not a registered advocate, or someone engaging in scam/fraudulent behavior:</p>
-      <ul className="list-disc ml-6 mb-4 space-y-2">
-        <li>Do NOT send them any money or share sensitive documents.</li>
-        <li>Navigate to their profile page and click the red <strong>"Report Suspicious Profile"</strong> button.</li>
-        <li>Provide a brief reason for your suspicion.</li>
-      </ul>
-      <p>Our administrative team will temporarily suspend the profile and investigate the claim by cross-checking Bar Council records. Profiles found guilty of fraud will be permanently deleted and reported to the relevant cybercrime authorities.</p>
+        {activeTab === 'lawyers' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-bold mb-2">1. Absolute Truthfulness & Representation</h3>
+              <p>You agree to provide 100% accurate information regarding your Bar Council registration, degrees, and identity. Submitting fake licenses, expired IDs, or misrepresenting your court level is a strict violation of these terms and will result in a permanent ban.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">9. Intellectual Property</h3>
-      <p>The Site and its original content, features, and functionality are owned by <BrandLogo /> and are protected by intellectual property laws. You cannot scrape, copy, or steal data from our directories.</p>
+            <div>
+              <h3 className="text-xl font-bold mb-2">2. Profile Updates Trigger Re-Verification</h3>
+              <p>For security reasons, if you edit critical fields in your profile (such as your Name, Bar Council Number, or Practice City), your profile will automatically revert to "Unverified" status until our administration reviews and approves the new details.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">10. Governing Law and Jurisdiction</h3>
-      <p>These Terms shall be governed and construed in accordance with international administrative policies, though primarily based out of our founding operations. Any dispute arising from the use of this platform or these Terms shall be subject to the exclusive jurisdiction of the competent courts in <strong>our major operational jurisdictions globally.</strong>.</p>
+            <div>
+              <h3 className="text-xl font-bold mb-2">3. Professional Conduct</h3>
+              <p>You must maintain the highest standards of professional ethics as prescribed by your local or national Bar Council. We reserve the right to suspend any advocate reported for fraud, fee extortion, or severe professional misconduct.</p>
+            </div>
 
-      <h3 className="text-xl font-bold mt-6 mb-3">11. Modifications and Termination</h3>
-      <p>We reserve the right to modify these terms at any time. We also reserve the right to terminate or suspend any user or lawyer account without prior notice if we detect suspicious activity, fraud, or violations of our community standards.</p>
+            <div>
+              <h3 className="text-xl font-bold mb-2">4. Q&A and Direct Messaging Policy</h3>
+              <p>The public Q&A platform is for educational and general guidance only. Answers provided by you do NOT constitute a formal Attorney-Client relationship. You must clearly state this limitation when answering public queries.</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-12 pt-8 border-t border-slate-200">
+        <h3 className="text-xl font-bold mb-4">Digital Signature & Acceptance</h3>
+        {isSigned ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6 flex items-start gap-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0" />
+            <div>
+              <p className="text-green-900 font-bold text-lg">Terms Digitally Signed</p>
+              <p className="text-green-800 text-sm mt-1">
+                You have successfully accepted and digitally signed the Terms of Service. This action has been securely recorded.
+              </p>
+              <p className="text-green-700 text-xs mt-3 font-mono bg-green-100/50 px-3 py-1.5 inline-block rounded-md border border-green-200/50">
+                Signed by: <strong>{signatureName}</strong> <br/>
+                Date: {signatureDate?.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-sm">
+            <p className="text-slate-600 mb-4 text-sm leading-relaxed">
+              By typing your full legal name below and clicking the "Digitally Sign & Accept" button, you acknowledge that you have read, understood, and agree to be bound by the Terms of Service, Privacy Policy, and all other platform guidelines.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input 
+                type="text" 
+                value={signatureName}
+                onChange={(e) => setSignatureName(e.target.value)}
+                placeholder="Type your full legal name..." 
+                className="flex-1 px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium text-slate-800 placeholder-slate-400"
+              />
+              <button 
+                onClick={handleSign}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 whitespace-nowrap shadow-sm"
+              >
+                <PenTool className="w-5 h-5" />
+                Digitally Sign & Accept
+              </button>
+            </div>
+            <p className="text-slate-400 text-xs mt-4">
+              * This electronic signature carries the exact same legal weight as a physical handwritten signature under national and international electronic transactions laws.
+            </p>
+          </div>
+        )}
+      </div>
     </LegalLayout>
   );
 };

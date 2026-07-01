@@ -112,7 +112,7 @@ export default function AboutUs() {
               <div>
                 <p className="text-sm text-slate-400 font-medium">Headquarters</p>
                 <p className="font-bold leading-relaxed">
-                  Metro Center, Central Business District,<br />Global HQ
+                  Sabir Chok, Pak Colony,<br />Kamahan Road, Lahore
                 </p>
               </div>
             </div>

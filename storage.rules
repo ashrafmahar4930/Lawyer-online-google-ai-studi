@@ -7,17 +7,29 @@ service firebase.storage {
 
     match /profile-pictures/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.auth.token.email == 'admin@jurisconnect.com' ||
+        request.auth.token.email == 'ashrafmahar4930@gmail.com' ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
     }
 
     match /case-files/{userId}/{caseId}/{fileName} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if true;
+      allow write: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.auth.token.email == 'admin@jurisconnect.com' ||
+        request.auth.token.email == 'ashrafmahar4930@gmail.com' ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
     }
 
     match /article-images/{fileName} {
       allow read: if true;
       allow write: if request.auth != null && (
         request.auth.token.email == 'admin@jurisconnect.com' ||
+        request.auth.token.email == 'ashrafmahar4930@gmail.com' ||
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
     }
@@ -26,6 +38,7 @@ service firebase.storage {
       allow read: if true;
       allow write: if request.auth != null && (
         request.auth.token.email == 'admin@jurisconnect.com' ||
+        request.auth.token.email == 'ashrafmahar4930@gmail.com' ||
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
     }
